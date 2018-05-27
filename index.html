@@ -1,0 +1,325 @@
+<!DOCTYPE html> 
+<html> 
+<head>
+	<meta charset="utf-8"/>
+	
+	<!-- mobile client meta data -->
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<link rel="apple-touch-icon-precomposed" href="style/images/icon.png"/> 
+	<link rel="apple-touch-startup-image" href="style/images/splash.png" />   
+	<meta name="apple-mobile-web-app-status-bar-style" content="black" />  
+
+	<title>Cases</title> 
+
+	<!-- jQuery Mobile scripts and style Sheets -->
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+	<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+	<script>
+    	$(document).on("mobileinit", function () {
+        	$.mobile.hashListeningEnabled = false;
+        	$.mobile.pushStateEnabled = false;
+    	});
+	</script>
+	<script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+	<link rel="stylesheet" href="https://crowdqueue.org/style/custom.min.0.1.css" />
+	
+	<!-- jQuery settings -->
+	<script type="text/javascript">
+		// set default transition 
+		$.mobile.defaultPageTransition = 'slide';
+		$(document).ready(function() {
+			// avoid caching ajax pages in jquery
+			$.ajaxSetup({ cache: false });
+		});
+	</script>
+	
+	<style>
+		.card {
+			font-size:36px;
+			text-align:center;
+			min-height: calc(100vh - 115px);
+		}
+	</style>
+	
+</head> 
+<body id="body" onLoad="loadCookies();"> 
+
+<div data-role="page" id="settings">
+	<div data-role="header" data-id="myheader" data-theme="b">
+		<h1>Settings</h1>
+		<a href="#" onClick="load_card('front','slide')" data-iconpos="notext" data-icon="home" data-transition="slide" class="ui-btn-right"></a>
+	</div><!-- /header -->
+	<div id="settings_content" data-role="content" style="text-align:left;" >
+		Not sure how to fill these out? Check out <a href="http://suffolklitlab.org" target="_blank">these instructions</a>.
+		<p>
+			<b>API Key</b> <input id="key" type=text value=""> 
+			<b>Base ID</b> <input id="base" type=text value=""> 
+			<b>Table Name</b> <input id="table" type=text value=""> 
+			<b>Time Out</b></br>If you go through all your timeouts..<input id="timeout" type=text value="25">
+		</p>
+		<input type=button value="Save &amp; Sync" onClick="saveCookies();load_card('front','slide')">
+	</div>
+</div>
+
+<div data-role="page" id="info">
+	<div data-role="header" data-id="myheader" data-theme="b">
+		<a href="#front" data-iconpos="notext" data-icon="carat-l" data-direction="reverse" data-transition="slide"></a>
+		<h1>About</h1>
+	</div><!-- /header -->
+	<div id="settings_content" data-role="content" style="text-align:left;" >
+		stuff about stuff
+	</div>
+</div>
+
+<div data-role="page" id="front">
+</div>
+
+<div data-role="page" id="back">
+</div>
+
+<!-- Include Dependency Scripts -->
+<!--<script type="text/javascript" src="https://unpkg.com/vue"></script>-->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.16.2/axios.min.js"></script>
+
+<script type="text/javascript">
+	
+	var debug = 1;
+	var work = 0;
+	var bscore = "";
+	var font = "";
+	var back = "";
+	var i = 0;
+	var afew = (new Date).getTime();
+	
+	function clean_front() {
+		$("#front").html("");
+		$("#front").append("<div data-role=\"header\" data-id=\"myheader\" data-theme=\"b\"><a href=\"#settings\" data-iconpos=\"notext\" data-icon=\"gear\" data-direction=\"reverse\" data-transition=\"slide\"></a>		<h1>Front (<span id=\"con1\" v-for=\"item in items\">{{ item['fields']['score'] }}</span>%)</h1>		<a href=\"#info\" data-iconpos=\"notext\" data-icon=\"info\" data-transition=\"slide\"></a>	</div> 	<div id=\"front_content\" data-role=\"content\" class=\"card\" onClick=\"$('#myfooter').hide();load_card('back','flip');setTimeout(function(){$('#myfooter').show()},400);\" v-for=\"item in items\"> 		<img id=\"front_img\" v-bind:src=\"item['fields']['front']\" v-bind:style=\"item['fields']['front_img']\" width=\"100%\"/> 	<span id=\"front_blob\" v-bind:style=\"item['fields']['front_blob']\">{{ item['fields']['front'] }}</span>		<input id=\"cardID\" type=\"hidden\" v-bind:value=\"item['id']\" width=\"100%\"/> 		<input id=\"ups\" type=\"hidden\" v-bind:value=\"item['fields']['up']\" width=\"100%\"/> 		<input id=\"downs\" type=\"hidden\" v-bind:value=\"item['fields']['down']\" width=\"100%\"/> 	<input id=\"record\" type=\"hidden\" v-bind:value=\"item['id']\" width=\"100%\"/></div>");		
+	}
+
+	function clean_back() {
+		$("#back").html("");
+		$("#back").append("<div data-role=\"header\" data-id=\"myheader\" data-theme=\"b\">  		<h1>Back (<span id=\"con2\" v-for=\"item in items\">{{ item['fields']['score'] }}</span>%)</h1>  	</div>  	<div id=\"back_content\" data-role=\"content\" class=\"card\" onClick=\"$('#myfooter').hide();$.mobile.changePage('#front', { transition: 'flip',reverse: true});\">  		<img id=\"back_img\" v-bind:src=\"item['fields']['back']\" style=\"display:none;width:100%\"/> 	<span id=\"back_blob\" style=\"display:none;\">{{ item['fields']['back'] }}</span>  	</div>  	<div id=\"myfooter\" data-role=\"footer\" data-id=\"myfooter\" data-position=\"fixed\" data-tap-toggle=\"false\" class=\"nav-glyphish-example\" style=\"display:none;\" data-theme=\"b\">  		<div data-role=\"navbar\" data-grid=\"a\">  			<ul>  				<li><a href=\"#\" id=\"voteup\" data-icon=\"custom\" onClick=\"write_card(1,0);\">Knew It</a></li>  				<li><a href=\"#\" id=\"votedown\" data-icon=\"custom\" onClick=\"write_card(0,1);\">Didn't Know it</a></li>  			</ul>  		</div>  	</div>");	
+	}
+	
+function createCookie(name,value,days) {
+	if (days) {
+		var date = new Date();
+		date.setTime(date.getTime()+(days*24*60*60*1000));
+		var expires = "; expires="+date.toGMTString();
+	}
+	else var expires = "";
+	document.cookie = name+"="+value+expires+"; path=/";
+}
+
+function readCookie(name) {
+	var nameEQ = name + "=";
+	var ca = document.cookie.split(';');
+	for(var i=0;i < ca.length;i++) {
+		var c = ca[i];
+		while (c.charAt(0)==' ') c = c.substring(1,c.length);
+		if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+	}
+	return null;
+}
+
+	function loadCookies() {
+		if (readCookie("key")) {
+			$("#key").val(readCookie("key"));
+		}	
+		if (readCookie("base")) {
+			$("#base").val(readCookie("base"));
+		}	
+		if (readCookie("table")) {
+			$("#table").val(readCookie("table"));
+		}	
+		if (readCookie("timeout")) {
+			$("#timeout").val(readCookie("timeout"));
+		}	
+	}
+
+	function saveCookies() {
+		key = $("#key").val();
+		base = $("#base").val();
+		table = $("#table").val();
+		timeout = $("#timeout").val();
+		createCookie("key",key,365*100);
+		createCookie("base",base,365*100);
+		createCookie("table",table,365*100);
+		createCookie("timeout",timeout,365*100);	
+	}
+	
+	clean_front();
+	clean_back();
+
+	function load_api_data(target) {
+	
+		var r = $.Deferred();
+	
+		app_id = $("#base").val();
+		app_key = $("#key").val();
+		table = $("#table").val();
+		record = $("#record").val();
+		work = 1;
+		
+		if (target == "#front") {
+			apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/?sort[0][field]=score&sort[0][direction]=asc&filterByFormula=({last}<="+afew+")&limit=1";
+		} else {
+			apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/?filterByFormula=(RECORD_ID() = '"+record+"')";	
+			console.log("---Load Back---");
+		}
+
+		var app = new Vue({
+              el: target,
+              data: {
+                  items: []
+              },
+              mounted: function(){
+                 this.loadItems();
+              },
+              methods: {
+                  loadItems: function(){
+                    // Init variables
+                    var self = this
+                    this.items = []
+					axios.get(
+													 apicall,
+                          {
+                              headers: { Authorization: "Bearer "+ app_key }
+                          }
+                      ).then(function(response){
+                          self.items = response.data.records;
+						  if (debug==1) {
+						  	console.log(apicall);	
+						  	console.log("---Load Card---");
+						  	console.log("ID: "+self.items[0]['id']);
+						  	console.log("Front: "+self.items[0]['fields']['front']);
+						  	console.log("Back: "+self.items[0]['fields']['back']);
+						  	console.log("Score: "+self.items[0]['fields']['score']);
+						  }
+						  if (self.items[0]['fields']['score'] == undefined) {
+						  	self.items[0]['fields']['score'] = "0";
+						  }
+						  bscore = self.items[0]['fields']['score'];
+						  front = self.items[0]['fields']['front'];
+						  back = self.items[0]['fields']['back'];
+						  if ( /^http.*(\.gif|\.png|\.jpg|\.jpeg)$/.test( front ) ) {
+								self.items[0]['fields']['front_img'] = "display:block";
+								self.items[0]['fields']['front_blob'] = "display:none";
+						  } else {
+	 							self.items[0]['fields']['front_img'] = "display:none";
+	 							self.items[0]['fields']['front_blob'] = "display:block";
+						  }
+						  if ( /^http.*(\.gif|\.png|\.jpg|\.jpeg)$/.test( back ) ) {
+								back = "<img src=\""+back+"\" width=\"100%\"/>";
+						  }
+						  work = 0;
+                      }).catch(function(error){
+                          console.log(error)
+                          work = -1;
+              			  $.mobile.loading("hide");
+                          alert("Make sure you're key and base info are correct. ("+error+")");
+                      })
+                  }
+              }
+          });
+          
+          return r;
+	}
+	
+	
+	function load_card(side,transition) {
+		if ($("#key").val() && $("#base").val() && $("#table").val() && $("#timeout").val()) {
+			if (side=="back") {
+				$("#con2").html(bscore);		
+				$("#back_content").html(back);
+				go_to(side,transition);		
+			} else if (side=="front") {
+				// h/t https://multiplestates.wordpress.com/2014/12/04/calling-one-jquery-function-only-after-another-function-has-run/
+				load_api_data("#"+side).done( go_to(side,transition) );
+			}				  
+
+		} else {
+			alert("You can't leave any of these fields blank.");
+		}
+	}
+	
+	function changepage(side,transition) {
+		var r = $.Deferred();
+		if (side == "front") {
+			//setTimeout(function () { $.mobile.changePage($('#'+side), { transition: transition}) }, 100);
+			$.mobile.changePage($('#'+side), { transition: transition})
+		} else {
+			$.mobile.changePage($('#'+side), { transition: transition})
+		}
+		return r;
+	}
+
+	function go_to(side,transition) {
+	
+		if (work == 0) {
+			changepage(side,transition).done( $( '#front' ).enhanceWithin() ); 
+		} else if (work == 1) {
+			if ($.mobile.loading().is(':hidden')) {
+				$.mobile.loading("show");
+			}
+			setTimeout(function () {
+        		go_to(side,transition);
+    		}, 50);
+		} else {
+			clean_front();
+			work = 0;
+		}
+
+	}
+	
+		
+	function write_card(up,down) {
+		app_id = $("#base").val();
+		app_key = $("#key").val();
+		table = $("#table").val();
+		apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/"+$("#cardID").val();
+		ups = Number(up) + Number($("#ups").val());
+		$("#ups").val(ups)
+		downs = Number(down) + Number($("#downs").val());
+		$("#downs").val(downs)
+		votes = Number(ups) + Number(downs);	
+		score = Math.round(((Number(ups) + 2)/(votes + 4))*100);
+		$("#con1").html(score)
+		$("#con2").html(score)
+
+		clean_front();
+
+		i++
+		if (i >= $("#timeout").val()) {
+			afew = (new Date).getTime();
+			i = 0;
+		}
+		
+		work = 1;
+		axios.patch(
+					 apicall, 
+						{  "fields": {  "up": ups, "down": downs, "score": score, "last": (new Date).getTime() }},
+                          {
+                              headers: { Authorization: "Bearer "+ app_key}
+                          }
+                      ).then(function(response){
+                      	  if (debug==1) {
+							  console.log("New Score: "+score);
+						  }
+						  work = 0;
+                      }).catch(function(error){
+                          console.log(error)
+                      }) 
+					  
+		setTimeout(function(){
+			load_card("front","slideup");		
+		},400);
+			
+	}
+
+</script>
+
+</body>
+</html>
