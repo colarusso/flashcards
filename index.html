@@ -236,6 +236,7 @@ function readCookie(name) {
 				$("#back_content").html(back);
 				go_to(side,transition);		
 			} else if (side=="front") {
+				clean_front();
 				// h/t https://multiplestates.wordpress.com/2014/12/04/calling-one-jquery-function-only-after-another-function-has-run/
 				load_api_data("#"+side).done( go_to(side,transition) );
 			}				  
@@ -289,7 +290,7 @@ function readCookie(name) {
 		$("#con1").html(score)
 		$("#con2").html(score)
 
-		clean_front();
+		//clean_front();
 
 		i++
 		if (i >= $("#timeout").val()) {
