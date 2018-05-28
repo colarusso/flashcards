@@ -7,10 +7,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
 	<meta name="apple-mobile-web-app-capable" content="yes" />
 	<link rel="apple-touch-icon-precomposed" href="style/images/icon.png"/> 
-	<link rel="apple-touch-startup-image" href="style/images/splash.png" />   
 	<meta name="apple-mobile-web-app-status-bar-style" content="black" />  
 
-	<title>Cases</title> 
+	<title>Flashcards</title> 
 
 	<!-- jQuery Mobile scripts and style Sheets -->
 	<link rel="stylesheet" href="//code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
@@ -143,9 +142,9 @@ function readCookie(name) {
 	}
 
 	function saveCookies() {
-		key = $("#key").val();
-		base = $("#base").val();
-		table = $("#table").val();
+		key = $("#key").val().trim();
+		base = $("#base").val().trim();
+		table = $("#table").val().trim();
 		timeout = $("#timeout").val();
 		createCookie("key",key,365*100);
 		createCookie("base",base,365*100);
@@ -158,9 +157,9 @@ function readCookie(name) {
 	
 		var r = $.Deferred();
 	
-		app_id = $("#base").val();
-		app_key = $("#key").val();
-		table = $("#table").val();
+		app_id = $("#base").val().trim();
+		app_key = $("#key").val().trim();
+		table = $("#table").val().trim();
 		record = $("#record").val();
 		work = 1;
 		
@@ -267,9 +266,9 @@ function readCookie(name) {
 	
 		
 	function write_card(up,down) {
-		app_id = $("#base").val();
-		app_key = $("#key").val();
-		table = $("#table").val();
+		app_id = $("#base").val().trim();
+		app_key = $("#key").val().trim();
+		table = $("#table").val().trim();
 		apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/"+$("#cardID").val();
 		ups = Number(up) + Number($("#ups").val());
 		$("#ups").val(ups)
