@@ -16,7 +16,7 @@ Since passing the bar, I haven't really had the need to commit such a large amou
 ## How To
 
 0. Create an [Airtable](https://airtable.com/) account if you don't already have one.
-1. Create an Airtable with the columns: "front", "back", "up", "down", "score", and "last," where "up", "down", "score", and "last" are number columns. You can use [this base](https://airtable.com/invite/l?inviteId=inveUUpZ4jP9hE66M&inviteToken=51b69eab0d648b22ff6dc9507089b0572664d33cfb197d14f84e1d0e00034d98) as a template if you like. Just click on the title then "Duplicate Base." You can then add your own tables.
+1. Create an table with the columns: "front", "back", "up", "down", "score", and "last," where "up", "down", "score", and "last" are number columns. You can use [this base](https://airtable.com/invite/l?inviteId=inveUUpZ4jP9hE66M&inviteToken=51b69eab0d648b22ff6dc9507089b0572664d33cfb197d14f84e1d0e00034d98) as a template if you like. Just click on the title then "Duplicate Base." You can then add your own tables.
 
 ![Duplicate](https://colarusso.github.io/flashcards/images/duplicate.gif)
 
