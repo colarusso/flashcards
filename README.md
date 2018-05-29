@@ -1,5 +1,5 @@
-# Flashcards
-Serve and order a virtual flashcard stack based on how well you've memorized its content. (1) make a spreadsheet with columns for the front and back of your cards; (2) add your content as rows to the sheet; (2) link that sheet to the [web app](https://colarusso.github.io/flashcards/); and (3) work your way through the cards. Context and instructions below. 
+# Turn Speadsheets into Flashcard Stacks
+Serve and order a virtual flashcard stack based on how well you've memorized its content. (1) make a spreadsheet with columns for the "front" and "back" of your cards; (2) add your content as rows to the sheet; (2) link that sheet to the [web app](https://colarusso.github.io/flashcards/); and (3) work your way through the cards. Context and instructions below. 
 
 See https://colarusso.github.io/flashcards/ 
 
@@ -21,8 +21,12 @@ Since passing the bar, I haven't really had the need to commit such a large amou
 ![Duplicate](https://colarusso.github.io/flashcards/images/duplicate.gif)
 
 2. Fill your Airtable with your cards by placing your desired text or the URL of an image in both the "front" and "back" cells of a row. The other columns will capture the history of your interactions (e.g., how many times you got it right). 
-3. Note your API key (instructions below), the table's base ID (instructions below), and the table's name (instructions below). 
+3. Note your API key ([instructions](#your-api-key) below), the table's base ID ([instructions](#your-base-id) below), and the table's name ([instructions](#your-table-name) below). 
 4. Visit https://colarusso.github.io/flashcards/, enter the info from 3 into the prompts, and have at it. 
+
+### Pro Tips
+
+If you place the url for an image in either the "front" or "back" column of your sheet, the web app will display the image (e.g., the picture of a state flag from wikipedia). Also, you aren't restricted to plain text. You can use html to write your cards. 
 
 ### Your API Key
 
