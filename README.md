@@ -31,6 +31,8 @@ Since passing the bar, I haven't really had the need to commit such a large amou
 * You can add multiple tables to a single base, making it easy for you to switch between them in the web app.  
 * You aren't restricted to plain text. You can use html to when wrting your cards. 
 
+*Note: [SeRiouS](https://www.spacedrepetition.com/) offers a virtual flashcard system for bar prep similar to the one described above. It didn't exist back when I took the bar, but if you don't want to create a few thousand cards from scratch, they have a nice set of decks made by professionals. Also, the company's run by a good friend of mine. FWIW, I do **not** have a financial stake in the company. I just find it interesting. That being said, I'm sure not everyone reading this is studying for the bar.*
+
 ### Your API Key
 
 To find your API key, after logging in, visit your [account page](https://airtable.com/account). It will be listed under *API Key*.
@@ -51,4 +53,3 @@ Your table name is the name of the tab your table displays in. For example, "fla
 
 ![Table Name](https://colarusso.github.io/flashcards/images/flags.png)
 
-*Note: [SeRiouS](https://www.spacedrepetition.com/) offers a virtual flashcard system for bar prep similar to the one described here. It didn't exist back when I took the bar, but if you don't want to create a few thousand cards from scratch, they have a nice set of decks made by professionals. Also, the company's run by a good friend of mine. FWIW, I do **not** have a financial stake in the company. I just find it interesting.*
