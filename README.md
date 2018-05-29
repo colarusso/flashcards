@@ -1,9 +1,9 @@
 # Turn Spreadsheets into Flashcards
-Serve and order a virtual flashcard stack based on how well you've memorized its content. (1) make a spreadsheet with columns for the "front" and "back" of your cards; (2) add your content as rows to the sheet; (2) link that sheet to the [web app](https://colarusso.github.io/flashcards/); and (3) work your way through the cards. Context and instructions below. 
+Serve and order a stack of virtual flashcards based on how well you've memorized its content. (1) make a spreadsheet with columns for the "front" and "back" of your cards; (2) add your content as rows to the sheet; (2) link that sheet to the [web app](https://colarusso.github.io/flashcards/); and (3) work your way through the cards. Context and instructions below. 
 
 See https://colarusso.github.io/flashcards/ 
 
-## Context
+## Context / Backstory
 
 When I studied for the bar, I reduced my notes to not quite three thousand "flashcards." In truth, they were virtual flashcards. I created a database of 2,705 question-answer pairs and put them up on a web server. I accessed the server from my phone which presented the questions as cards based on how well the server thought I knew the material. 
 
@@ -26,7 +26,10 @@ Since passing the bar, I haven't really had the need to commit such a large amou
 
 ### Pro Tips
 
-If you place the url for an image in either the "front" or "back" column of your sheet, the web app will display the image (e.g., the picture of a state flag from wikipedia). Also, you aren't restricted to plain text. You can use html to write your cards. 
+* The percentage in the parenthetical at the top of a card is a measure of the system's confidence in you getting the card right. Also, the system will move the cards with the lowest confidence score to the top of your stack. So once you start to consistently see high percentages, you know you're doing well. FYI, this score is an approximation of the [Wilson Confidence Interval](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Wilson_score_interval). 
+* If you place the url for an image (`.jpg`, `.gif`, or `.png`) in either the "front" or "back" column of your sheet, the web app will display the image (e.g., the picture of a state flag from wikipedia). 
+* You can add multiple tables to a single base, making it easy for you to switch between them in the web app.  
+* You aren't restricted to plain text. You can use html to when wrting your cards. 
 
 ### Your API Key
 
@@ -38,7 +41,7 @@ To find your bases' ID, click on the *Help* link then *API Documentation*. This 
 
 ![Base ID 1](https://colarusso.github.io/flashcards/images/base.gif)
 
-The string of text between `https://airtable.com/` and `/api/docs#curl/introduction` is your Base ID. 
+The string of text between `https://airtable.com/` and `/api/docs#curl/introduction` is your Base ID. It should look something like this `appH6ratSHISfBjvC`.
 
 ![Base ID 2](https://colarusso.github.io/flashcards/images/baseid.png)
 
