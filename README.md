@@ -1,7 +1,7 @@
 # Flashcards
-Serve and order a flashcard stack based on how well you've memorized its content.  
+Serve and order a flashcard stack based on how well you've memorized its content. (1) make a spreadsheet with columns for the front and back of your cards; (2) add your content as rows on the sheet; (2) link that sheet to the [web app](https://colarusso.github.io/flashcards/); and (3) learn. Context and instructions below. 
 
-The following is documentation for the free "smart" flashcard server available at: https://colarusso.github.io/flashcards/ "What's a 'smart' flashcard server?" you ask. Read on to find out. 
+See https://colarusso.github.io/flashcards/ 
 
 ## Context
 
@@ -30,9 +30,11 @@ To find your API key, after logging in, visit your [account page](https://airtab
 
 ### Your base ID
 
-To find your bases' ID, click on the *Help* link then *API Documentation*. This will open a new window. The string of text between `https://airtable.com/` and `/api/docs#curl/introduction` is your Base ID. 
+To find your bases' ID, click on the *Help* link then *API Documentation*. This will open a new window. 
 
 ![Base ID 1](https://colarusso.github.io/flashcards/images/base.gif)
+
+The string of text between `https://airtable.com/` and `/api/docs#curl/introduction` is your Base ID. 
 
 ![Base ID 2](https://colarusso.github.io/flashcards/images/baseid.png)
 
