@@ -22,6 +22,16 @@
 
 	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
 
+	<!-- Global site tag (gtag.js) - Google Analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-120057393-1"></script>
+	<script>
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'UA-120057393-1');
+	</script>
+
 	<!-- jQuery Mobile scripts and style Sheets -->
 	<link rel="stylesheet" href="//code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
 	<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
@@ -214,28 +224,6 @@
 	}
 
 
-	function check_written_ () {
-		work = 1;
-		apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/?filterByFormula=AND((RECORD_ID() = '"+record+"'),({last}<'"+afew+"'))"
-		console.log(apicall);
-		axios.get(
-					apicall,
-                          {
-                              headers: { Authorization: "Bearer "+ app_key }
-                          }
-                      ).then(function(response){
-                          self.items = response.data.records;
-						  if (record == self.items[0]['id']) {
-							work = 0;
-						  }
-                      }).catch(function(error){
-                          console.log(error)
-                          work = -1;
-              			  $.mobile.loading("hide");
-                          alert("There was a problem contacting your Airtable. ("+error+")");
-                      })
-	}
-
 	function check_written(last) {
 		if (work == 0) {
 			load_card("front","slideup");
@@ -259,13 +247,13 @@
 						  } else {
 							//console.log("undefned");
 							setTimeout(function () {
-								check_written();
+								check_written(last);
 							}, 100);
 						  }
                       }).catch(function(error){
                           console.log(error)
                           work = -1;
-						  check_written();
+						  check_written(last);
               			  $.mobile.loading("hide");
                           alert("There was a problem contacting your Airtable. ("+error+")");
                       })
