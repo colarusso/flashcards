@@ -52,7 +52,7 @@
 	<div id="settings_content" data-role="content" style="text-align:left;" >
 		Not sure how to fill these out? Check out <a href="https://github.com/colarusso/flashcards/blob/master/README.md#flashcards" target="_blank">these instructions</a>.
 		<p>
-			<b>API Key</b> <input id="key" type=text value=""> 
+			<b>API Key</b> <input id="key" type=text value="">
 			<b>Base ID</b> <input id="base" type=text value=""> 
 			<b>Table Name</b> <input id="table" type=text value=""> 
 			<b>Cooling Off</b></br>The minimum number of of questions a card should sit out of rotation (must be fewer than the total number of cards).<input id="timeout" type=text value="10">
@@ -78,8 +78,8 @@
 </div>
 
 <!-- Include Dependency Scripts -->
-<!--<script type="text/javascript" src="https://unpkg.com/vue"></script>-->
-<script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.min.js"></script>
+<!--<script type="text/javascript" src="https://unpkg.com/vue"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.min.js"></script>-->
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.16.2/axios.min.js"></script>
 
 <script type="text/javascript">
@@ -89,7 +89,12 @@
 	var bscore = "";
 	var font = "";
 	var back = "";
-	//var i = 0;
+	
+	var ups = 0;
+	var downs = 0;
+	var record = "";
+	
+	var i = 0;
 	var afew = (new Date).getTime();
 	
 	clean_front();
@@ -97,7 +102,7 @@
 
 	function clean_front() {
 		$("#front").html("");
-		$("#front").append("<div data-role=\"header\" data-id=\"myheader\" data-theme=\"b\"><a href=\"#settings\" data-iconpos=\"notext\" data-icon=\"gear\" data-direction=\"reverse\" data-transition=\"slide\"></a>		<h1>Front (<span id=\"con1\" v-for=\"item in items\">{{ item['fields']['score'] }}</span>%)</h1>		<a href=\"#info\" data-iconpos=\"notext\" data-icon=\"info\" data-transition=\"slide\"></a>	</div> 	<div id=\"front_content\" data-role=\"content\" class=\"card\" onClick=\"$('#myfooter').hide();load_card('back','flip');setTimeout(function(){$('#myfooter').show()},400);\" v-for=\"item in items\"> 		<img id=\"front_img\" v-bind:src=\"item['fields']['front']\" v-bind:style=\"item['fields']['front_img']\" width=\"100%\"/> 	<span id=\"front_blob\" v-bind:style=\"item['fields']['front_blob']\">{{ item['fields']['front'] }}</span>		<input id=\"cardID\" type=\"hidden\" v-bind:value=\"item['id']\" width=\"100%\"/> 		<input id=\"ups\" type=\"hidden\" v-bind:value=\"item['fields']['up']\" width=\"100%\"/> 		<input id=\"downs\" type=\"hidden\" v-bind:value=\"item['fields']['down']\" width=\"100%\"/> 	<input id=\"record\" type=\"hidden\" v-bind:value=\"item['id']\" width=\"100%\"/></div>");		
+		$("#front").append("<div class=\"ui-header ui-bar-b\" data-role=\"header\" data-id=\"myheader\" data-theme=\"b\"><a href=\"#settings\" class=\"ui-link ui-btn-left ui-btn ui-icon-gear ui-btn-icon-notext ui-shadow ui-corner-all\" data-iconpos=\"notext\" data-icon=\"gear\" data-direction=\"reverse\" data-transition=\"slide\"></a>		<h1 class=\"ui-title\">Front (<span id=\"con1\">0</span>%)</h1>		<a href=\"#info\" class=\"ui-link ui-btn-right ui-btn ui-icon-info ui-btn-icon-notext ui-shadow ui-corner-all\" data-iconpos=\"notext\" data-icon=\"info\" data-transition=\"slide\"></a>	</div> 	<div id=\"front_content\" data-role=\"content\" class=\"card ui-content\" onClick=\"$('#myfooter').hide();load_card('back','flip');setTimeout(function(){$('#myfooter').show()},400);\"></div>");		
 	}
 
 	function clean_back() {
@@ -170,19 +175,6 @@ function readCookie(name) {
 			console.log("---Load Back---");
 		}
 
-		var app = new Vue({
-              el: target,
-              data: {
-                  items: []
-              },
-              mounted: function(){
-                 this.loadItems();
-              },
-              methods: {
-                  loadItems: function(){
-                    // Init variables
-                    var self = this
-                    this.items = []
 					axios.get(
 													 apicall,
                           {
@@ -198,22 +190,40 @@ function readCookie(name) {
 						  	console.log("Back: "+self.items[0]['fields']['back']);
 						  	console.log("Score: "+self.items[0]['fields']['score']);
 						  }
+						  record = self.items[0]['id'];
+
+						  if (self.items[0]['fields']['up'] == undefined) {
+						  	ups_r = "0";
+						  } else {						  
+						  	ups_r = self.items[0]['fields']['up'];	
+						  }				  
+						  if (self.items[0]['fields']['down'] == undefined) {
+						  	downs_r = "0";
+						  } else {						  
+						  	downs_r = self.items[0]['fields']['down'];	
+						  }				  
 						  if (self.items[0]['fields']['score'] == undefined) {
-						  	self.items[0]['fields']['score'] = "0";
-						  }
-						  bscore = self.items[0]['fields']['score'];
+						  	bscore = "0";
+						  } else {						  
+						  	bscore = self.items[0]['fields']['score'];	
+						  }				  
+						  
 						  front = self.items[0]['fields']['front'];
 						  back = self.items[0]['fields']['back'];
+						  
 						  if ( /^http.*(\.gif|\.png|\.jpg|\.jpeg)$/.test( front ) ) {
-								self.items[0]['fields']['front_img'] = "display:block";
-								self.items[0]['fields']['front_blob'] = "display:none";
-						  } else {
-	 							self.items[0]['fields']['front_img'] = "display:none";
-	 							self.items[0]['fields']['front_blob'] = "display:block";
+						  		front = "<img src=\""+front+"\" width=\"100%\"/>";
 						  }
 						  if ( /^http.*(\.gif|\.png|\.jpg|\.jpeg)$/.test( back ) ) {
 								back = "<img src=\""+back+"\" width=\"100%\"/>";
 						  }
+						  
+						  //$( '#front' ).trigger( "create" );
+						  $("#con1").html(bscore);		
+						  $("#front_content").html(front);
+						  
+						  //$( '#front' ).enhanceWithin();
+						  
 						  work = 0;
                       }).catch(function(error){
                           console.log(error)
@@ -221,9 +231,7 @@ function readCookie(name) {
               			  $.mobile.loading("hide");
                           alert("Make sure you're key and base info are correct and that your cooling-off is less than your total number of cards. ("+error+")");
                       })
-                  }
-              }
-          });
+                  
           
           return r;
 	}
@@ -249,14 +257,14 @@ function readCookie(name) {
 	function go_to(side,transition) {
 	
 		if (work == 0) {
-			$.mobile.changePage($('#'+side), { transition: transition})
+			$.mobile.changePage($('#'+side), { transition: transition},{ reloadPage: true})
 		} else if (work == 1) {
 			if ($.mobile.loading().is(':hidden')) {
 				$.mobile.loading("show");
 			}
 			setTimeout(function () {
         		go_to(side,transition);
-    		}, 50);
+    		}, 10);
 		} else {
 			clean_front();
 			work = 0;
@@ -269,11 +277,9 @@ function readCookie(name) {
 		app_id = $("#base").val().trim();
 		app_key = $("#key").val().trim();
 		table = $("#table").val().trim();
-		apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/"+$("#cardID").val();
-		ups = Number(up) + Number($("#ups").val());
-		$("#ups").val(ups)
-		downs = Number(down) + Number($("#downs").val());
-		$("#downs").val(downs)
+		apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/"+record;
+		ups = Number(up) + Number(ups_r);
+		downs = Number(down) + Number(downs_r);
 		votes = Number(ups) + Number(downs);	
 		score = Math.round(((Number(ups) + 2)/(votes + 4))*100);
 		$("#con1").html(score)
@@ -286,6 +292,8 @@ function readCookie(name) {
 			afew = (new Date).getTime();
 			i = 0;
 		}
+		
+		//console.log(apicall);
 		
 		work = 1;
 		axios.patch(
@@ -305,7 +313,7 @@ function readCookie(name) {
 					  
 		setTimeout(function(){
 			load_card("front","slideup");		
-		},420);
+		},200);
 			
 	}
 
