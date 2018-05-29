@@ -30,7 +30,7 @@ To find your API key, after logging in, visit your [account page](https://airtab
 
 ### Your base ID
 
-To find your bases' ID, click on the *Help* link then *API Documentation*. This will open a new window. The string of text between *https://airtable.com/* and */api/docs#curl/introduction* is your Base ID. 
+To find your bases' ID, click on the *Help* link then *API Documentation*. This will open a new window. The string of text between `https://airtable.com/` and `/api/docs#curl/introduction` is your Base ID. 
 
 ![Base ID 1](https://colarusso.github.io/flashcards/images/base.gif)
 
