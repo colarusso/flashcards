@@ -69,14 +69,14 @@
 	<div data-role="header" data-id="myheader" data-theme="b">
 		<a href="#info" data-iconpos="notext" data-icon="info" data-transition="slide" data-direction="reverse"></a>
 		<h1>Settings</h1>
-		<a href="#" onClick="saveCookies();i = 0;load_card('front','slide')" data-iconpos="notext" data-icon="home" data-transition="slide" class="ui-btn-right"></a>
+		<a href="#" onClick="saveCookies();i = 0;work=0;load_card('front','slide')" data-iconpos="notext" data-icon="home" data-transition="slide" class="ui-btn-right"></a>
 	</div><!-- /header -->
 	<div id="settings_content" data-role="content" style="text-align:left;" >
 		<b>API Key</b> <input id="key" type=text value="">
 		<b>Base ID</b> <input id="base" type=text value="">
 		<b>Table Name</b> <input id="table" type=text value="">
 		<b>Cooling Off</b></br>The minimum number of of questions a card should sit out of rotation (must be fewer than the total number of cards).<input id="timeout" type=text value="10">
-		<input type=button value="Save &amp; Sync" onClick="saveCookies();i = 0;load_card('front','slide')">
+		<input type=button value="Save &amp; Sync" onClick="saveCookies();i = 0;work=0;load_card('front','slide')">
 	</div>
 </div>
 
