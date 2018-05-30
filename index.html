@@ -83,7 +83,7 @@
 <div data-role="page" id="front">
 	<div class="ui-header ui-bar-b" data-role="header" data-id="myheader" data-theme="b">
 		<a href="#settings" class="ui-link ui-btn-left ui-btn ui-icon-gear ui-btn-icon-notext ui-shadow ui-corner-all" data-iconpos="notext" data-icon="gear" data-direction="reverse" data-transition="slide"></a>
-		<h1 class="ui-title">Front (<span id="con1">0</span>%)</h1>
+		<h1 class="ui-title">Front (<span id="con1">50</span>%)</h1>
 	</div>
 	<div id="front_content" data-role="content" class="card ui-content" onClick="$('#myfooter').hide();load_card('back','flip');setTimeout(function(){$('#myfooter').show()},400);">
 	</div>
@@ -91,7 +91,7 @@
 
 <div data-role="page" id="back">
 	<div data-role="header" data-id="myheader" data-theme="b">
-		<h1>Back (<span id="con2">0</span>%)</h1>
+		<h1>Back (<span id="con2">50</span>%)</h1>
 	</div>
 	<div id="back_content" data-role="content" class="card" onClick="$('#myfooter').hide();$.mobile.changePage('#front', { transition: 'flip',reverse: true});">
 	</div>
@@ -279,7 +279,7 @@
 		  	downs_r = self.items[0]['fields']['down'];
 		  }
 		  if (self.items[0]['fields']['score'] == undefined) {
-		  	bscore = "0";
+		  	bscore = "50";
 		  } else {
 		  	bscore = self.items[0]['fields']['score'];
 		  }
