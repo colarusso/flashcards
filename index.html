@@ -68,15 +68,15 @@
 <div data-role="page" id="settings">
 	<div data-role="header" data-id="myheader" data-theme="b">
 		<a href="#info" data-iconpos="notext" data-icon="info" data-transition="slide" data-direction="reverse"></a>
-		<h1>Settings</h1>
-		<a href="#" onClick="saveCookies();i = 0;work=0;load_card('front','slide')" data-iconpos="notext" data-icon="home" data-transition="slide" class="ui-btn-right"></a>
+		<h1>Flashcards (settings)</h1>
+		<a href="#" onClick="saveCookies();i = 0;load_card('front','slide')" data-iconpos="notext" data-icon="home" data-transition="slide" class="ui-btn-right"></a>
 	</div><!-- /header -->
 	<div id="settings_content" data-role="content" style="text-align:left;" >
 		<b>API Key</b> <input id="key" type=text value="">
 		<b>Base ID</b> <input id="base" type=text value="">
 		<b>Table Name</b> <input id="table" type=text value="">
 		<b>Cooling Off</b></br>The minimum number of of questions a card should sit out of rotation (must be fewer than the total number of cards).<input id="timeout" type=text value="10">
-		<input type=button value="Save &amp; Sync" onClick="saveCookies();i = 0;work=0;load_card('front','slide')">
+		<input type=button value="Save &amp; Sync" onClick="saveCookies();i = 0;load_card('front','slide')">
 	</div>
 </div>
 
@@ -90,9 +90,20 @@
 </div>
 
 <div data-role="page" id="back">
-<div data-role="header" data-id="myheader" data-theme="b">  		<h1>Back (<span id="con2" v-for="item in items">{{ item['fields']['score'] }}</span>%)</h1>  	</div>  	<div id="back_content" data-role="content" class="card" onClick="$('#myfooter').hide();$.mobile.changePage('#front', { transition: 'flip',reverse: true});">  		<img id="back_img" v-bind:src="item['fields']['back']" style="display:none;width:100%"/> 	<span id="back_blob" style="display:none;">{{ item['fields']['back'] }}</span>  	</div>  	<div id="myfooter" data-role="footer" data-id="myfooter" data-position="fixed" data-tap-toggle="false" class="nav-glyphish-example" style="display:none;" data-theme="b">  		<div data-role="navbar" data-grid="a">  			<ul>  				<li><a href="#" id="voteup" data-icon="custom" onClick="write_card(1,0);">Knew It</a></li>  				<li><a href="#" id="votedown" data-icon="custom" onClick="write_card(0,1);">Didn't Know it</a></li>  			</ul>  		</div>  	</div>
+	<div data-role="header" data-id="myheader" data-theme="b">
+		<h1>Back (<span id="con2">0</span>%)</h1>
+	</div>
+	<div id="back_content" data-role="content" class="card" onClick="$('#myfooter').hide();$.mobile.changePage('#front', { transition: 'flip',reverse: true});">
+	</div>
+	<div id="myfooter" data-role="footer" data-id="myfooter" data-position="fixed" data-tap-toggle="false" class="nav-glyphish-example" style="display:none;" data-theme="b">
+		<div data-role="navbar" data-grid="a">
+			<ul>
+				<li><a href="#" id="voteup" data-icon="custom" onClick="write_card(1,0);">Knew It</a></li>
+				<li><a href="#" id="votedown" data-icon="custom" onClick="write_card(0,1);">Didn't Know it</a></li>
+			</ul>
+		</div>
+	</div>
 </div>
-
 
 <div data-role="page" id="info">
 	<div data-role="header" data-id="myheader" data-theme="b">
@@ -100,56 +111,14 @@
 		<a href="#settings" data-iconpos="notext" data-icon="carat-r" data-transition="slide" class="ui-btn-right"></a>
 	</div><!-- /header -->
 	<div id="settings_content" data-role="content" style="text-align:left;" >
-
-		<h2>Backstory</h2>
-		<p>
-		When I studied for the bar, I reduced my notes to not quite three thousand "flashcards." In truth, they were virtual flashcards. I created a database of 2,705 question-answer pairs and put them up on a web server. I accessed the server from my phone which presented the questions as cards based on how well the server thought I knew the material.
-		</p><p>
-		I'd view a question (the front of a card), answer it, check the answer (the back of the card), and tell my phone whether I got it right or wrong. Based on this reporting, the server would figure out where to put the card in the metaphorical stack. If I always got a question right, the card went to the back of the queue. If I never got it right, it stayed near the front, and as the balance of my answers moved from wrong to right, a card's position drifted to the back. The cards were categorized based on the topics on the Bar and I could dive in based on a topic of my choosing or a representative mix of topics.
-		</p><p>
-		As a consequence, I always had my cards with me, and I always knew I was reviewing the material I needed to work on most. In fact, the ordering was based on the calculation of a confidence score which effectively was an estimate of how likely I was to "know" the content. So I actually had a pretty good sense of where I was. To be clear the most important part was probably the fact that the data entry forced me to distill and engage with my notes in a meaningful way. Whatever the case, I look back fondly on what I called the BarBot.
-		</p><p>
-		Since passing the bar, I haven't really had the need to commit such a large amount of information to memory. However, I recently started teaching full-time at Suffolk Law, and I wanted an easy way to memorize student names. Traditionally, I make flashcards with student photos so I can greet students on the first day by name. It occurred to me that it would be pretty cool if I could do my review on the train during my commute. So I decided to revisit the virtual flashcard idea. Inspired by one of my [student's projects](https://github.com/SuffolkLITLab/resource-map-how-to), I decided to run the whole thing off GitHub Pages and Airtable. Consequently, anyone can create their own set of cards by making an Airtable (free on-line spreadsheet) and access it by following the directions below.
-		</p>
-		<h2>How To</h2>
-		<p>
-		0. Create an <a href="https://airtable.com/" target="_blank">Airtable</a> account if you don't already have one.
-		</p><p>
-		1. Create an Airtable with the columns: "front", "back", "up", "down", "score", and "last," where "up", "down", "score", and "last" are number columns. You can use <a href="https://airtable.com/invite/l?inviteId=inveUUpZ4jP9hE66M&inviteToken=51b69eab0d648b22ff6dc9507089b0572664d33cfb197d14f84e1d0e00034d98" target="_blank">this base</a> as a template if you like. Just click on the title then "Duplicate Base." You can then add your own tables.
-
-		<p><img src="https://colarusso.github.io/flashcards/images/duplicate.gif" width="100%"/></p>
-
-		</p><p>
-		2. Fill your Airtable with your cards by placing your desired text or the URL of an image in both the "front" and "back" cells of a row. The other columns will capture the history of your interactions (e.g., how many times you got it right).
-		</p><p>
-		3. Note your API key (instructions below), the table's base ID (instructions below), and the table's name (instructions below).
-		</p><p>
-		4. Visit https://colarusso.github.io/flashcards/, enter the info from 3 into the prompts, and have at it.
-		</p>
-		<h3>Your API Key</h3>
-		<p>
-		To find your API key, after logging in, visit your <a href="https://airtable.com/account" target="_blank">account page</a>. It will be listed under *API Key*.
-		</p>
-		<h3>Your base ID</h3>
-		<p>
-		To find your bases' ID, click on the *Help* link then *API Documentation*. This will open a new window. The string of text between <code>https://airtable.com/</code> and <code>/api/docs#curl/introduction</code> is your Base ID.
-		</p><p>
-			<img src="https://colarusso.github.io/flashcards/images/base.gif" width="100%"/>
-		</p><p>
-			<img src="https://colarusso.github.io/flashcards/images/baseid.png" width="100%"/>
-		</p>
-		<h3>Your table name</h3>
-		<p>
-		Your table name is the name of the tab your table displays in. For example, "flags."
-		</p><p>
-		<img src="https://colarusso.github.io/flashcards/images/flags.png" width="100%"/>
-		</p><p>
-		<i>Note: <a href="https://www.spacedrepetition.com/" target="_blank">SeRiouS</a> offers a virtual flashcard system for bar prep similar to the one described here. It didn't exist back when I took the bar, but if you don't want to create a few thousand cards from scratch, they have a nice set of decks made by professionals. Also, the company's run by a good friend of mine. FWIW, I do **not** have a financial stake in the company. I just find it interesting.</i>
-		</p>
-		<p>
+		<h3>Overview</h3>
+		This web app turns spreadsheets into virtual flashcards. All you have to do is: (1) make a spreadsheet with columns for the "front" and "back" of your cards; (2) add your content as rows to the sheet; (2) link that sheet to the web app; and (3) work your way through the cards. You can find more context and instructions <a href="https://github.com/colarusso/flashcards/blob/master/README.md#context--backstory" target="_blank">here</a>.
 		<h3>Credits</h3>
 		<p> The thumbs up and arrow buttons you see when "voting," as well as in the homescreen icon, are the work of <a href="https://thenounproject.com/term/thumb-up/83151/" target="_blank">Antar</a>, <a href="https://thenounproject.com/term/arrow/37752/" target="_blank">Julien Miclo</a>, and <a href="https://thenounproject.com/term/e-learning/62522" target="_blank">Attilio Baghino</a> over at the Noun Project.
 		</p>
+		<h3>Privacy</h3>
+		<p>
+		We make use of Google Analytics to track visitor statistics, this includes the use of cookies. See <a href="https://policies.google.com/technologies/partner-sites">How Google uses data when you use our partner's sites or apps</a> (e.g., this site). We do not track the content of your spreadsheets. However, that data is stored with Airtable, and your use of Airtable is subject to their terms of service. Additionally, this site is hosted as a GitHub Page and presumably GitHub maintains associated server logs.
 		</p>
 	</div>
 </div>
@@ -162,7 +131,7 @@
 
 <script type="text/javascript">
 
-	var debug = 0;
+	var debug = 1;
 
 	var work = 0;
 	var bscore = "";
@@ -234,29 +203,29 @@
 			apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/?filterByFormula=AND((RECORD_ID() = '"+record+"'),({last}<='"+last+"'))"
 			//console.log(apicall);
 			axios.get(
-					apicall,
-                          {
-                              headers: { Authorization: "Bearer "+ app_key }
-                          }
-                      ).then(function(response){
-						  //console.log(response);
-						  if (response.data.records[0] != undefined) {
-							//console.log("defined");
-							work = 0;
-							check_written();
-						  } else {
-							//console.log("undefned");
-							setTimeout(function () {
-								check_written(last);
-							}, 100);
-						  }
-                      }).catch(function(error){
-                          console.log(error)
-                          work = -1;
-						  check_written(last);
-              			  $.mobile.loading("hide");
-                          alert("There was a problem contacting your Airtable. ("+error+")");
-                      })
+				apicall,
+        {
+            headers: { Authorization: "Bearer "+ app_key }
+        }
+      ).then(function(response){
+			  //console.log(response);
+			  if (response.data.records[0] != undefined) {
+					//console.log("defined");
+					work = 0;
+					check_written();
+				} else {
+					//console.log("undefned");
+					setTimeout(function () {
+						check_written(last);
+					}, 100);
+			  }
+      }).catch(function(error){
+      	console.log(error)
+      	//work = -1;
+		  	check_written(last);
+      	$.mobile.loading("hide");
+        alert("There was a problem contacting your Airtable. ("+error+")");
+      })
 		}
 	}
 
@@ -272,74 +241,72 @@
 
 		if (target == "#front") {
 			apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/?sort[0][field]=score&sort[0][direction]=asc&filterByFormula=({last}<="+afew+")&limit=1";
-		} else {
-			apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/?filterByFormula=(RECORD_ID() = '"+record+"')";
-			console.log("---Load Back---");
-		}
+		} //else {
+		//	apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/?filterByFormula=(RECORD_ID() = '"+record+"')";
+		//	console.log("---Load Back---");
+		//}
 
-					axios.get(
-													 apicall,
-                          {
-                              headers: { Authorization: "Bearer "+ app_key }
-                          }
-                      ).then(function(response){
-                          self.items = response.data.records;
-						  if (debug==1) {
-						  	console.log("---Load Card---");
-						  	console.log(apicall);
-							console.log("ID: "+self.items[0]['id']);
-						  	console.log("Front: "+self.items[0]['fields']['front']);
-						  	console.log("Back: "+self.items[0]['fields']['back']);
-						  	console.log("Score: "+self.items[0]['fields']['score']);
-							console.log(response);
-						  }
-						  record = self.items[0]['id'];
+		axios.get(
+			 apicall,
+	    {
+	        headers: { Authorization: "Bearer "+ app_key }
+	    }
+    ).then(function(response){
+      self.items = response.data.records;
+		  if (debug==1) {
+		  	console.log("---Load Card---");
+		  	console.log(apicall);
+			console.log("ID: "+self.items[0]['id']);
+		  	console.log("Front: "+self.items[0]['fields']['front']);
+		  	console.log("Back: "+self.items[0]['fields']['back']);
+		  	console.log("Score: "+self.items[0]['fields']['score']);
+			console.log(response);
+		  }
+		  record = self.items[0]['id'];
 
-						  if (self.items[0]['fields']['up'] == undefined) {
-						  	ups_r = "0";
-						  } else {
-						  	ups_r = self.items[0]['fields']['up'];
-						  }
-						  if (self.items[0]['fields']['down'] == undefined) {
-						  	downs_r = "0";
-						  } else {
-						  	downs_r = self.items[0]['fields']['down'];
-						  }
-						  if (self.items[0]['fields']['score'] == undefined) {
-						  	bscore = "0";
-						  } else {
-						  	bscore = self.items[0]['fields']['score'];
-						  }
+		  if (self.items[0]['fields']['up'] == undefined) {
+		  	ups_r = "0";
+		  } else {
+		  	ups_r = self.items[0]['fields']['up'];
+		  }
+		  if (self.items[0]['fields']['down'] == undefined) {
+		  	downs_r = "0";
+		  } else {
+		  	downs_r = self.items[0]['fields']['down'];
+		  }
+		  if (self.items[0]['fields']['score'] == undefined) {
+		  	bscore = "0";
+		  } else {
+		  	bscore = self.items[0]['fields']['score'];
+		  }
 
-						  front = self.items[0]['fields']['front'];
-						  back = self.items[0]['fields']['back'];
+		  front = self.items[0]['fields']['front'];
+		  back = self.items[0]['fields']['back'];
 
-						  if ( /^http.*(\.gif|\.png|\.jpg|\.jpeg)$/.test( front ) ) {
-						  		front = "<img src=\""+front+"\" width=\"100%\"/>";
-						  }
-						  if ( /^http.*(\.gif|\.png|\.jpg|\.jpeg)$/.test( back ) ) {
-								back = "<img src=\""+back+"\" width=\"100%\"/>";
-						  }
+		  if ( /^http.*(\.gif|\.png|\.jpg|\.jpeg)$/.test( front.trim() ) ) {
+		  		front = "<img src=\""+front+"\" width=\"100%\"/>";
+		  }
+		  if ( /^http.*(\.gif|\.png|\.jpg|\.jpeg)$/.test( back.trim() ) ) {
+				back = "<img src=\""+back+"\" width=\"100%\"/>";
+		  }
 
-						  //$( '#front' ).trigger( "create" );
-						  $("#con1").html(bscore);
-						  $("#front_content").html(front);
+		  //$( '#front' ).trigger( "create" );
+		  $("#con1").html(bscore);
+		  $("#front_content").html(front);
 
-						  //$( '#front' ).enhanceWithin();
+		  //$( '#front' ).enhanceWithin();
 
-						  work = 0;
-                      }).catch(function(error){
-                          console.log(error)
-                          work = -1;
-              			  $.mobile.loading("hide");
-                          alert("Make sure you're key and base info are correct and that your cooling-off is less than your total number of cards. ("+error+")");
-                      })
-
-
-
-
-
-          return r;
+		  work = 0;
+    }).catch(function(error){
+		console.log(error)
+		work = -1;
+		$.mobile.loading("hide");
+        alert("Make sure you're key and base info are correct and that your cooling-off is less than your total number of cards. ("+error+")");
+		afew = (new Date).getTime();
+		console.log(last)
+		$.mobile.changePage($('#settings'), { transition: "slide", reverse: "true"})
+    })
+    return r;
 	}
 
 
@@ -353,16 +320,15 @@
 				// h/t https://multiplestates.wordpress.com/2014/12/04/calling-one-jquery-function-only-after-another-function-has-run/
 				load_api_data("#"+side).done( go_to(side,transition) );
 			}
-
 		} else {
 			alert("You can't leave any of these fields blank.");
 		}
 	}
 
 	function go_to(side,transition) {
-
 		if (work == 0) {
-			$.mobile.changePage($('#'+side), { transition: transition},{ reloadPage: true})
+			//$.mobile.changePage($('#'+side), { transition: transition},{ reloadPage: true})
+			$.mobile.changePage($('#'+side), { transition: transition})
 		} else if (work == 1) {
 			if ($.mobile.loading().is(':hidden')) {
 				$.mobile.loading("show");
@@ -373,7 +339,6 @@
 		} else {
 			work = 0;
 		}
-
 	}
 
 	function write_card(up,down) {
@@ -405,26 +370,22 @@
 
 		work = 1;
 		axios.patch(
-					 apicall,
-						{  "fields": {  "up": ups, "down": downs, "score": score, "last": last }},
-                          {
-                              headers: { Authorization: "Bearer "+ app_key}
-                          }
-                      ).then(function(response){
-                      	  if (debug==1) {
-							  console.log("New Score: "+score);
-							  console.log(response);
-						  }
-						  //work = 0;
-                      }).catch(function(error){
-                          console.log(error)
-                      })
-
+		 apicall,
+			{  "fields": {  "up": ups, "down": downs, "score": score, "last": last }},
+      {
+          headers: { Authorization: "Bearer "+ app_key}
+      }
+    ).then(function(response){
+      if (debug==1) {
+			  console.log("New Score: "+score);
+			  console.log(response);
+		  }
+		  //work = 0;
+    }).catch(function(error){
+    	console.log(error)
+    })
 		check_written(last);
-
 	}
-
-
 
 </script>
 
