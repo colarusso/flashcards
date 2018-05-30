@@ -28,6 +28,7 @@ Since passing the bar, I haven't really had the need to commit such a large amou
 
 ### Pro Tips
 
+* You can clear out the history of your interactions by editing your table directly (e.g., deleting all the entries other than *front* and *back*).
 * The percentage in the parenthetical at the top of a card is a measure of the system's confidence in you getting the card right. Also, the system will move the cards with the lowest confidence score to the top of your stack. So once you start to consistently see high percentages, you know you're doing well. FYI, this score is an approximation of the [Wilson Confidence Interval](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Wilson_score_interval).
 * If you place the url for an image (`.jpg`, `.gif`, or `.png`) in either the "front" or "back" column of your sheet, the web app will display the image (e.g., the picture of a state flag from wikipedia).
 * You can add multiple tables to a single base, making it easy for you to switch between them in the web app.  
