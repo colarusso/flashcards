@@ -12,13 +12,13 @@
 	<title>Flashcards</title>
 	<meta property="og:type" content="website"/>
 	<meta property="og:title" content="Custom \"Smart\" Flashcards"/>
-	<meta property="og:description" content="A tool for serving and ordering flashcard stacks based on how well you've memorized their content."/>
+	<meta property="og:description" content="A tool for serving and ordering flashcards based on how well you've memorized their content."/>
 
 	<meta name="twitter:card" content="summary_large_image">
 	<meta name="twitter:site" content="@Colarusso">
 	<meta name="twitter:creator" content="@Colarusso">
 	<meta name="twitter:title" content="Custom \"Smart\" Flashcards">
-	<meta name="twitter:description" content="A tool for serving and ordering flashcard stacks based on how well you've memorized their content.">
+	<meta name="twitter:description" content="A tool for serving and ordering flashcards based on how well you've memorized their content.">
 
 	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
 
@@ -114,7 +114,7 @@
 		<h3>Overview</h3>
 		This web app turns spreadsheets into virtual flashcards. All you have to do is: (1) make a spreadsheet with columns for the "front" and "back" of your cards; (2) add your content as rows to the sheet; (2) link that sheet to the web app; and (3) work your way through the cards. You can find more context and instructions in the <a href="https://github.com/colarusso/flashcards/blob/master/README.md#context--backstory" target="_blank">README</a> file for this project's <a href="https://github.com/colarusso/flashcards" target="_blank">GitHub repo</a>.
 		<h3>Credits</h3>
-		<p>This tool was designed and built by <a href="https://twitter.com/colarusso" target="_blank">@Colarusso</a></p>
+		<p>This tool was designed and built by <a href="https://twitter.com/colarusso" target="_blank">@Colarusso</a>.</p>
 		<p> The thumbs up and arrow buttons you see when "voting," as well as in the homescreen icon, are the work of <a href="https://thenounproject.com/term/thumb-up/83151/" target="_blank">Antar</a>, <a href="https://thenounproject.com/term/arrow/37752/" target="_blank">Julien Miclo</a>, and <a href="https://thenounproject.com/term/e-learning/62522" target="_blank">Attilio Baghino</a> over at the Noun Project.
 		</p>
 		<h3>Privacy</h3>
@@ -126,13 +126,11 @@
 
 
 <!-- Include Dependency Scripts -->
-<!--<script type="text/javascript" src="https://unpkg.com/vue"></script>
-<script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.min.js"></script>-->
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.16.2/axios.min.js"></script>
 
 <script type="text/javascript">
 
-	var debug = 1;
+	var debug = 0;
 
 	var work = 0;
 	var bscore = "";
@@ -202,28 +200,36 @@
 				$.mobile.loading("show");
 			}
 			apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/?filterByFormula=AND((RECORD_ID() = '"+record+"'),({last}<='"+last+"'))"
-			//console.log(apicall);
 			axios.get(
 				apicall,
         {
             headers: { Authorization: "Bearer "+ app_key }
         }
       ).then(function(response){
-			  //console.log(response);
-			  if (response.data.records[0] != undefined) {
-					//console.log("defined");
-					work = 0;
-					check_written();
-				} else {
-					//console.log("undefned");
-					setTimeout(function () {
-						check_written(last);
-					}, 100);
+			if (debug==1) {
+			  console.log("---Write Check---");
+			  console.log(apicall);
+			}
+			if (response.data.records[0] != undefined) {
+				if (debug==1) {
+				  console.log("Write Check: Pass");
+				  console.log(response);
+				}
+				work = 0;
+				check_written();
+			} else {
+				if (debug==1) {
+					console.log("Write Check: Pending");
+					console.log(response);
+				}
+				setTimeout(function () {
+					check_written(last);
+				}, 100);
 			  }
       }).catch(function(error){
       	console.log(error)
       	//work = -1;
-		  	check_written(last);
+		check_written(last);
       	$.mobile.loading("hide");
         alert("There was a problem contacting your Airtable. ("+error+")");
       })
@@ -242,10 +248,7 @@
 
 		if (target == "#front") {
 			apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/?sort[0][field]=score&sort[0][direction]=asc&filterByFormula=({last}<="+afew+")&limit=1";
-		} //else {
-		//	apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/?filterByFormula=(RECORD_ID() = '"+record+"')";
-		//	console.log("---Load Back---");
-		//}
+		}
 
 		axios.get(
 			 apicall,
@@ -257,11 +260,11 @@
 		  if (debug==1) {
 		  	console.log("---Load Card---");
 		  	console.log(apicall);
-			console.log("ID: "+self.items[0]['id']);
+				console.log("ID: "+self.items[0]['id']);
 		  	console.log("Front: "+self.items[0]['fields']['front']);
 		  	console.log("Back: "+self.items[0]['fields']['back']);
 		  	console.log("Score: "+self.items[0]['fields']['score']);
-			console.log(response);
+				console.log(response);
 		  }
 		  record = self.items[0]['id'];
 
@@ -291,21 +294,18 @@
 				back = "<img src=\""+back+"\" width=\"100%\"/>";
 		  }
 
-		  //$( '#front' ).trigger( "create" );
 		  $("#con1").html(bscore);
 		  $("#front_content").html(front);
 
-		  //$( '#front' ).enhanceWithin();
-
 		  work = 0;
     }).catch(function(error){
-		console.log(error)
-		work = -1;
-		$.mobile.loading("hide");
-        alert("Make sure you're key and base info are correct and that your cooling-off is less than your total number of cards. ("+error+")");
-		afew = (new Date).getTime();
-		console.log(last)
-		$.mobile.changePage($('#settings'), { transition: "slide", reverse: "true"})
+			console.log(error)
+			work = -1;
+			$.mobile.loading("hide");
+	        alert("Make sure you're key and base info are correct and that your cooling-off is less than your total number of cards. ("+error+")");
+			afew = (new Date).getTime();
+			console.log(last)
+			$.mobile.changePage($('#settings'), { transition: "slide", reverse: "true"})
     })
     return r;
 	}
@@ -318,8 +318,7 @@
 				$("#back_content").html(back);
 				go_to(side,transition);
 			} else if (side=="front") {
-				// h/t https://multiplestates.wordpress.com/2014/12/04/calling-one-jquery-function-only-after-another-function-has-run/
-				load_api_data("#"+side).done( go_to(side,transition) );
+				load_api_data("#"+side).done( go_to(side,transition) ); // h/t https://multiplestates.wordpress.com/2014/12/04/calling-one-jquery-function-only-after-another-function-has-run/
 			}
 		} else {
 			alert("You can't leave any of these fields blank.");
@@ -328,15 +327,14 @@
 
 	function go_to(side,transition) {
 		if (work == 0) {
-			//$.mobile.changePage($('#'+side), { transition: transition},{ reloadPage: true})
 			$.mobile.changePage($('#'+side), { transition: transition})
 		} else if (work == 1) {
 			if ($.mobile.loading().is(':hidden')) {
 				$.mobile.loading("show");
 			}
 			setTimeout(function () {
-        		go_to(side,transition);
-    		}, 1);
+      	go_to(side,transition);
+    	}, 1);
 		} else {
 			work = 0;
 		}
@@ -355,37 +353,34 @@
 		$("#con2").html(score)
 
 		i++
-		//console.log(i);
 		if (i >= $("#timeout").val()) {
-			//console.log("reset afew");
 			afew = (new Date).getTime();
 			i = 0;
-		}
-
-		if (debug ==1) {
-			console.log("---Write Data---");
-			console.log(apicall);
 		}
 
 		last = (new Date).getTime();
 
 		work = 1;
 		axios.patch(
-		 apicall,
+		 	apicall,
 			{  "fields": {  "up": ups, "down": downs, "score": score, "last": last }},
       {
           headers: { Authorization: "Bearer "+ app_key}
       }
     ).then(function(response){
-      if (debug==1) {
-			  console.log("New Score: "+score);
-			  console.log(response);
-		  }
-		  //work = 0;
+			if (debug==1) {
+				console.log("---Write Data---");
+				console.log(apicall);
+				console.log("New Score: "+score);
+				console.log(response);
+			}
+			check_written(last);
     }).catch(function(error){
     	console.log(error)
+			$.mobile.loading("hide");
+      alert("There was a problem writing to your Airtable. ("+error+")");
+			check_written(last);
     })
-		check_written(last);
 	}
 
 </script>
