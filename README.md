@@ -3,7 +3,7 @@ Serve and order a stack of virtual flashcards based on how well you've memorized
 
 ![example](https://colarusso.github.io/flashcards/images/flips.gif)
 
-See https://colarusso.github.io/flashcards/
+See https://colarusso.github.io/flashcards/ for the web app. Also, all of the project files are available here: https://github.com/colarusso/flashcards
 
 ## Context / Backstory
 
