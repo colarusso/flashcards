@@ -229,9 +229,9 @@
       }).catch(function(error){
       	console.log(error)
       	//work = -1;
-		check_written(last);
-      	$.mobile.loading("hide");
         alert("There was a problem contacting your Airtable. ("+error+")");
+      	$.mobile.loading("hide");
+		check_written(last);
       })
 		}
 	}
@@ -247,7 +247,7 @@
 		work = 1;
 
 		if (target == "#front") {
-			apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/?sort[0][field]=score&sort[0][direction]=asc&filterByFormula=({last}<="+afew+")&limit=1";
+			apicall = "https://api.airtable.com/v0/"+app_id+"/"+table+"/?sort[0][field]=score&sort[0][direction]=asc&sort[1][field]=random&filterByFormula=({last}<="+afew+")&limit=1";
 		}
 
 		axios.get(
@@ -256,15 +256,15 @@
 	        headers: { Authorization: "Bearer "+ app_key }
 	    }
     ).then(function(response){
-      self.items = response.data.records;
+      	  self.items = response.data.records;
 		  if (debug==1) {
 		  	console.log("---Load Card---");
 		  	console.log(apicall);
-				console.log("ID: "+self.items[0]['id']);
+			console.log("ID: "+self.items[0]['id']);
 		  	console.log("Front: "+self.items[0]['fields']['front']);
 		  	console.log("Back: "+self.items[0]['fields']['back']);
 		  	console.log("Score: "+self.items[0]['fields']['score']);
-				console.log(response);
+			console.log(response);
 		  }
 		  record = self.items[0]['id'];
 
@@ -299,10 +299,14 @@
 
 		  work = 0;
     }).catch(function(error){
-			console.log(error)
+			console.log(error);
+			if (error.response.status == 422) { 
+		        alert("Make sure your table has the following columns: front, back, up, down, last, and random. Note: RANDOM is a new column as of 6/3/18. Users of this web app who set things up prior to the 3rd will need to update their tables by adding a text field named \"random.\" ("+error+")");					
+			} else {
+		        alert("Make sure your key and base info are correct and that your cooling-off is less than your total number of cards. ("+error+")");
+			} 
 			work = -1;
 			$.mobile.loading("hide");
-	        alert("Make sure you're key and base info are correct and that your cooling-off is less than your total number of cards. ("+error+")");
 			afew = (new Date).getTime();
 			console.log(last)
 			$.mobile.changePage($('#settings'), { transition: "slide", reverse: "true"})
@@ -363,7 +367,7 @@
 		work = 1;
 		axios.patch(
 		 	apicall,
-			{  "fields": {  "up": ups, "down": downs, "score": score, "last": last }},
+			{  "fields": {  "up": ups, "down": downs, "score": score, "last": last, "random": Math.random().toString(36).substring(2, 3) }},
       {
           headers: { Authorization: "Bearer "+ app_key}
       }
@@ -377,9 +381,9 @@
 			check_written(last);
     }).catch(function(error){
     	console.log(error)
-			$.mobile.loading("hide");
-      alert("There was a problem writing to your Airtable. ("+error+")");
-			check_written(last);
+		$.mobile.loading("hide");
+      	alert("There was a problem writing to your Airtable. ("+error+")");
+		check_written(last);
     })
 	}
 
