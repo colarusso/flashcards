@@ -17,6 +17,8 @@ Since passing the bar, I haven't really had the need to commit such a large amou
 
 ## How To
 
+You can use Airtable as described below, or select **Local CSV** in Settings and upload a CSV file with `front` and `back` columns.
+
 0. Create an [Airtable](https://airtable.com/) account if you don't already have one.
 1. Create an table with the columns: "front", "back", "up", "down", "score", "last," and "rondom," where "up", "down", "score", and "last" are number columns. You can use [this base](https://airtable.com/invite/l?inviteId=inveUUpZ4jP9hE66M&inviteToken=51b69eab0d648b22ff6dc9507089b0572664d33cfb197d14f84e1d0e00034d98) as a template if you like. Just click on the title then "Duplicate Base." You can then add your own tables.
 
@@ -24,10 +26,11 @@ Since passing the bar, I haven't really had the need to commit such a large amou
 
 2. Fill your Airtable with your cards by placing your desired text or the URL of an image in both the "front" and "back" cells of a row. The other columns will capture the history of your interactions (e.g., how many times you got it right).
 3. Note your API key ([instructions](#your-api-key) below), the table's base ID ([instructions](#your-base-id) below), and the table's name ([instructions](#your-table-name) below).
-4. Visit https://colarusso.github.io/flashcards/, enter the info from 3 into the prompts, and have at it.
+4. Visit https://colarusso.github.io/flashcards/, select **Airtable**, enter the info from 3 into Settings, and have at it.
 
 ### Pro Tips
 
+* If you are using a keyboard, press Space to flip a card, ↑ for <i>Knew It</i>, or ↓ for <i>Didn't Know It</i>.
 * You can clear out the history of your interactions by editing your table directly (e.g., deleting all the entries other than *front* and *back*).
 * The percentage in the parenthetical at the top of a card is the system's perdiction that you will get a card right. It starts at 50% and moves up or down based on your interactions. The system moves the cards with the lowest score to the top of your stack. So once you start to consistently see high percentages, you know you're doing well. FWIW, this score is an approximation of the [Wilson Confidence Interval](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Wilson_score_interval).
 * If you place the url for an image (`.jpg`, `.gif`, or `.png`) in either the "front" or "back" column of your sheet, the web app will display the image (e.g., the picture of a state flag from wikipedia).
