@@ -96,15 +96,15 @@
 		</div>
 
 		<b>Cooling Off</b><br>The minimum number of questions a card should sit out of rotation (must be fewer than the total number of cards).<input id="timeout" type="number" min="0" step="1" value="10">
-		<label for="read_aloud" style="margin-bottom: 10px;"><input id="read_aloud" type="checkbox" onchange="saveSettings();if(!this.checked)stopSpeaking();updateReadAloudSettings();"> Read cards aloud</label>
-		<div id="voice_settings" style="display: none;">
+		<label for="read_aloud" style="margin-bottom: 10px;"><input id="read_aloud" type="checkbox" onchange="readAloudChanged(this.checked);"> Read cards aloud</label>
+		<div id="voice_settings" style="display:none;">
 			<label for="voice"><b>Voice</b></label>
-			<select id="voice" onchange="createCookie('voice',this.value,365*100);">
+			<select id="voice" onchange="voiceChanged(this.value);">
 				<option value="">System default</option>
 			</select>
 		</div>
 		<div style="margin-top: 20px;">
-			<input type="button" value="Save &amp; Start" onClick="saveSettingsAndStart();">		
+			<input type="button" value="Save &amp; Start" onClick="saveSettingsAndStart();">
 		</div>
 		<div class="ui-grid-a" style="margin-top:.6em;">
 			<div class="ui-block-a"><input type="button" value="Export CSV" onClick="exportCsv();"></div>
@@ -282,23 +282,37 @@
 		if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 	}
 
+	function speakText(text) {
+		if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window) || !text) return;
+		stopSpeaking();
+		var utterance = new SpeechSynthesisUtterance(text);
+		var voiceURI = $("#voice").val();
+		if (voiceURI) {
+			var voices = window.speechSynthesis.getVoices();
+			for (var j = 0; j < voices.length; j++) {
+				if (voices[j].voiceURI === voiceURI) { utterance.voice = voices[j]; break; }
+			}
+		}
+		window.speechSynthesis.speak(utterance);
+	}
+
+	function readAloudChanged(checked) {
+		saveSettings();
+		updateReadAloudSettings();
+		if (checked) speakText("Read cards aloud.");
+		else stopSpeaking();
+	}
+
+	function voiceChanged(voiceURI) {
+		createCookie("voice",voiceURI,365*100);
+		speakText("Testing, one, two, three.");
+	}
+
 	function readCardAloud(side) {
-		if (!$("#read_aloud").prop("checked") || !("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
+		if (!$("#read_aloud").prop("checked")) return;
 		var card = document.getElementById(side+"_content");
 		if (!card) return;
-		var text = card.innerText.trim();
-		stopSpeaking();
-		if (text) {
-			var utterance = new SpeechSynthesisUtterance(text);
-			var voiceURI = $("#voice").val();
-			if (voiceURI) {
-				var voices = window.speechSynthesis.getVoices();
-				for (var j = 0; j < voices.length; j++) {
-					if (voices[j].voiceURI === voiceURI) { utterance.voice = voices[j]; break; }
-				}
-			}
-			window.speechSynthesis.speak(utterance);
-		}
+		speakText(card.innerText.trim());
 	}
 
 	function loadLocalDeck() {
