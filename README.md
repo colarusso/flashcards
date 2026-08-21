@@ -1,5 +1,5 @@
 # Turn Spreadsheets into Flashcards
-Serve and order a stack of virtual flashcards based on how well you've memorized its content. (1) make a spreadsheet with columns for the "front" and "back" of your cards; (2) add your content as rows to the sheet; (2) link that sheet to the [web app](https://colarusso.github.io/flashcards/); and (3) work your way through the cards. Context and instructions below.
+Serve and order a stack of virtual flashcards based on how well you've memorized its content: (1) make a spreadsheet with columns for the "front" and "back" of your cards; (2) add your content as rows to the sheet; (2) link that sheet to the [web app](https://colarusso.github.io/flashcards/); and (3) work your way through the cards. Context and instructions below.
 
 ![example](https://colarusso.github.io/flashcards/images/flips.gif)
 
