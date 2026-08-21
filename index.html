@@ -215,7 +215,7 @@
 		if (readCookie("table")) $("#table").val(readCookie("table"));
 		if (readCookie("timeout")) $("#timeout").val(readCookie("timeout"));
 		if (readCookie("source")) $("#source").val(readCookie("source"));
-		$("#read_aloud").prop("checked", readCookie("readaloud") === "true");
+		$("#read_aloud").prop("checked", false);
 		loadLocalDeck();
 		updateSourceSettings();
 		updateReadAloudSettings();
@@ -234,7 +234,6 @@
 		createCookie("base",base,365*100);
 		createCookie("table",table,365*100);
 		createCookie("timeout",timeout,365*100);
-		createCookie("readaloud", $("#read_aloud").prop("checked") ? "true" : "false", 365*100);
 	}
 
 	// Backwards-compatible name for existing bookmarks/customizations.
