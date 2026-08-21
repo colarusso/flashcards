@@ -96,7 +96,16 @@
 		</div>
 
 		<b>Cooling Off</b><br>The minimum number of questions a card should sit out of rotation (must be fewer than the total number of cards).<input id="timeout" type="number" min="0" step="1" value="10">
-		<input type="button" value="Save &amp; Start" onClick="saveSettingsAndStart();">
+		<label for="read_aloud" style="margin-bottom: 10px;"><input id="read_aloud" type="checkbox" onchange="saveSettings();if(!this.checked)stopSpeaking();updateReadAloudSettings();"> Read cards aloud</label>
+		<div id="voice_settings" style="display: none;">
+			<label for="voice"><b>Voice</b></label>
+			<select id="voice" onchange="createCookie('voice',this.value,365*100);">
+				<option value="">System default</option>
+			</select>
+		</div>
+		<div style="margin-top: 20px;">
+			<input type="button" value="Save &amp; Start" onClick="saveSettingsAndStart();">		
+		</div>
 		<div class="ui-grid-a" style="margin-top:.6em;">
 			<div class="ui-block-a"><input type="button" value="Export CSV" onClick="exportCsv();"></div>
 			<div class="ui-block-b"><input type="button" value="Reset Counts" onClick="resetCounts();"></div>
@@ -206,9 +215,13 @@
 		if (readCookie("table")) $("#table").val(readCookie("table"));
 		if (readCookie("timeout")) $("#timeout").val(readCookie("timeout"));
 		if (readCookie("source")) $("#source").val(readCookie("source"));
+		$("#read_aloud").prop("checked", readCookie("readaloud") === "true");
 		loadLocalDeck();
 		updateSourceSettings();
+		updateReadAloudSettings();
+		populateVoiceOptions();
 		try { $("#source").selectmenu("refresh"); } catch (e) {}
+		try { $("#read_aloud").checkboxradio("refresh"); } catch (e) {}
 	}
 
 	function saveSettings() {
@@ -221,6 +234,7 @@
 		createCookie("base",base,365*100);
 		createCookie("table",table,365*100);
 		createCookie("timeout",timeout,365*100);
+		createCookie("readaloud", $("#read_aloud").prop("checked") ? "true" : "false", 365*100);
 	}
 
 	// Backwards-compatible name for existing bookmarks/customizations.
@@ -243,6 +257,48 @@
 		i = 0;
 		afew = (new Date).getTime();
 		load_card('front','slide');
+	}
+
+	function updateReadAloudSettings() {
+		if ($("#read_aloud").prop("checked")) $("#voice_settings").show();
+		else $("#voice_settings").hide();
+	}
+
+	function populateVoiceOptions() {
+		var select = $("#voice");
+		if (!select.length) return;
+		var selected = select.val() || readCookie("voice") || "";
+		var voices = ("speechSynthesis" in window) ? window.speechSynthesis.getVoices() : [];
+		select.empty().append($("<option>").val("").text("System default"));
+		for (var j = 0; j < voices.length; j++) {
+			select.append($("<option>").val(voices[j].voiceURI).text(voices[j].name+(voices[j].lang ? " ("+voices[j].lang+")" : "")));
+		}
+		if (selected && voices.some(function(voice){ return voice.voiceURI === selected; })) select.val(selected);
+		else select.val("");
+		try { select.selectmenu("refresh", true); } catch (e) {}
+	}
+
+	function stopSpeaking() {
+		if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+	}
+
+	function readCardAloud(side) {
+		if (!$("#read_aloud").prop("checked") || !("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
+		var card = document.getElementById(side+"_content");
+		if (!card) return;
+		var text = card.innerText.trim();
+		stopSpeaking();
+		if (text) {
+			var utterance = new SpeechSynthesisUtterance(text);
+			var voiceURI = $("#voice").val();
+			if (voiceURI) {
+				var voices = window.speechSynthesis.getVoices();
+				for (var j = 0; j < voices.length; j++) {
+					if (voices[j].voiceURI === voiceURI) { utterance.voice = voices[j]; break; }
+				}
+			}
+			window.speechSynthesis.speak(utterance);
+		}
 	}
 
 	function loadLocalDeck() {
@@ -730,7 +786,12 @@
 		}
 	});
 
-	$(document).on("pagebeforeshow", "#settings", function(){ updateSourceSettings(); });
+	if ("speechSynthesis" in window) {
+		window.speechSynthesis.addEventListener("voiceschanged", populateVoiceOptions);
+	}
+
+	$(document).on("pageshow", "#front, #back", function(){ readCardAloud(this.id); });
+	$(document).on("pagebeforeshow", "#settings", function(){ stopSpeaking(); updateSourceSettings(); });
 
 </script>
 
