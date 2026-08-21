@@ -3,8 +3,6 @@ Serve and order a stack of virtual flashcards based on how well you've memorized
 
 ![example](https://colarusso.github.io/flashcards/images/flips.gif)
 
-See https://colarusso.github.io/flashcards/ for the web app. Also, all of the project files are available here: https://github.com/colarusso/flashcards
-
 ## Context / Backstory
 
 When I studied for the bar, I reduced my notes to not quite three thousand "flashcards." In truth, they were virtual flashcards. I created a database of 2,705 question-answer pairs and put them up on a web server. I accessed the server from my phone which presented the questions as cards based on how well the server thought I knew the material.
