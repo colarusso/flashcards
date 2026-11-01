@@ -6,8 +6,11 @@
 	<!-- mobile client meta data -->
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
 	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-title" content="Flashcards" />
+	<meta name="application-name" content="Flashcards" />
 	<meta name="apple-mobile-web-app-status-bar-style" content="black" />
 	<link rel="apple-touch-icon" href="style/images/icon.png"/>
+	<link rel="manifest" href="manifest.webmanifest" />
 
 	<title>Flashcards</title>
 	<meta property="og:type" content="website"/>
@@ -60,12 +63,51 @@
 			text-align:center;
 			min-height: calc(100vh - 115px);
 		}
+		/* Keep the radio and label in separate columns, even when a deck name wraps. */
+		#deck_choices .deck-option {
+			display:grid !important;
+			grid-template-columns:2.1em minmax(0, 1fr);
+			column-gap:.8em;
+			align-items:center;
+			box-sizing:border-box;
+			width:100%;
+			padding:.8em .7em;
+			border-bottom:1px solid #ddd;
+			cursor:pointer;
+			font-weight:normal;
+		}
+		#deck_choices .deck-radio-column {
+			display:flex;
+			align-items:center;
+			justify-content:center;
+			min-width:0;
+		}
+		#deck_choices .deck-radio-column input[type="radio"] {
+			position:static !important;
+			margin:0 !important;
+			width:1.2em !important;
+			height:1.2em !important;
+			flex-shrink:0;
+		}
+		#deck_choices .deck-name-column {
+			display:block;
+			min-width:0;
+			overflow-wrap:anywhere;
+			line-height:1.35;
+		}
+		.delete-csv-btn, .delete-csv-btn.ui-btn {
+			background:#bb242e !important;
+			border-color:#941c24 !important;
+			color:white !important;
+			text-shadow:none !important;
+		}
+		.delete-csv-btn:disabled { opacity:.5; }
 	</style>
 
 </head>
 <body id="body" onLoad="loadCookies();">
 
-<div data-role="page" id="settings">
+<div data-role="page" id="settings" data-title="Flashcards">
 	<div data-role="header" data-id="myheader" data-theme="b">
 		<a href="#info" data-iconpos="notext" data-icon="info" data-transition="slide" data-direction="reverse"></a>
 		<h1>Settings</h1>
@@ -80,19 +122,25 @@
 
 		<div id="airtable_settings">
 			<p style="font-size:.9em;">
-				See this project's <a href="https://github.com/colarusso/flashcards#how-to" target="_blank">README</a> for instructions on how to set up an Airtable table and get your API key, Base ID, and Table Name.
+				See this project's <a href="https://github.com/colarusso/flashcards#how-to" target="_blank">README</a> for instructions on how to set up an Airtable table and get a personal access token and Base ID. The token needs <code>schema.bases:read</code> and <code>data.records:read</code> scopes (and <code>data.records:write</code> if your tables have the progress columns).
 			</p>
 			<b>API Key / Personal Access Token</b> <input id="key" type="password" value="">
 			<b>Base ID</b> <input id="base" type="text" value="">
-			<b>Table Name</b> <input id="table" type="text" value="">
+			<p style="font-size:.9em;">Tables with <b>front</b> and <b>back</b> fields appear below automatically. For tables without all five progress fields, review progress is saved in this browser.</p>
+			<input type="button" value="Refresh Airtable Tables" onClick="refreshAirtableTables(true);">
 		</div>
 
 		<div id="local_csv_settings" style="display:none;">
 			<p style="font-size:.9em;">The CSV must contain <b>front</b> and <b>back</b> columns. Progress is stored in this browser. Optional columns <b>up</b>, <b>down</b>, <b>score</b>, <b>last</b>, and <b>random</b> are preserved when present.</p>
-			<label for="csv_file"><b>CSV File</b></label>
-			<input id="csv_file" type="file" accept=".csv,text/csv" onchange="importLocalCsv(this.files[0]);">
-			<p id="csv_status" style="margin-top:.4em;">No local CSV loaded.</p>
-			
+			<label for="csv_file"><b>CSV Files</b></label>
+			<input id="csv_file" type="file" accept=".csv,text/csv" multiple onchange="importLocalCsv(this.files);">
+			<p style="font-size:.85em;">Choose one or more files to add to your saved list.</p>
+		</div>
+
+		<div id="deck_selector_area" style="margin:1.2em 0;">
+			<b id="deck_selector_label">Choose a CSV</b>
+			<div id="deck_choices" role="radiogroup" aria-labelledby="deck_selector_label"></div>
+			<p id="deck_status" style="font-size:.9em;" aria-live="polite"></p>
 		</div>
 
 		<b>Cooling Off</b><br>The minimum number of questions a card should sit out of rotation (must be fewer than the total number of cards).<input id="timeout" type="number" min="0" step="1" value="10">
@@ -110,10 +158,13 @@
 			<div class="ui-block-a"><input type="button" value="Export CSV" onClick="exportCsv();"></div>
 			<div class="ui-block-b"><input type="button" value="Reset Counts" onClick="resetCounts();"></div>
 		</div>
+		<div id="delete_csv_wrap" style="margin-top:.6em;">
+			<button type="button" class="delete-csv-btn" onclick="deleteSelectedCsv();">Delete CSV</button>
+		</div>
 	</div>
 </div>
 
-<div data-role="page" id="front">
+<div data-role="page" id="front" data-title="Flashcards">
 	<div class="ui-header ui-bar-b" data-role="header" data-id="myheader" data-theme="b">
 		<a href="#settings" class="ui-link ui-btn-left ui-btn ui-icon-gear ui-btn-icon-notext ui-shadow ui-corner-all" data-iconpos="notext" data-icon="gear" data-direction="reverse" data-transition="slide"></a>
 		<h1 class="ui-title">Front (<span id="con1">50</span>% | <span id="deck1">50</span>%)</h1>
@@ -122,7 +173,7 @@
 	</div>
 </div>
 
-<div data-role="page" id="back">
+<div data-role="page" id="back" data-title="Flashcards">
 	<div data-role="header" data-id="myheader" data-theme="b">
 		<h1>Back (<span id="con2">50</span>% | <span id="deck2">50</span>%)</h1>
 	</div>
@@ -138,21 +189,26 @@
 	</div>
 </div>
 
-<div data-role="page" id="info">
+<div data-role="page" id="info" data-title="Flashcards">
 	<div data-role="header" data-id="myheader" data-theme="b">
 		<h1>About</h1>
 		<a href="#settings" data-iconpos="notext" data-icon="carat-r" data-transition="slide" class="ui-btn-right"></a>
 	</div>
 	<div id="settings_content" data-role="content" style="text-align:left;" >
 		<h3>Overview</h3>
-		This web app turns spreadsheets into flashcards. Make a spreadsheet with columns for the "front" and "back" of your cards either as an Airtable or a CSV file, then connect/upload it under Settings. If you have a keyboard, you can press Space to flip a card, ↑ for <i>Knew It</i>, or ↓ for <i>Didn't Know It</i>. You can find more context and instructions in the <a href="https://github.com/colarusso/flashcards/blob/master/README.md#context--backstory" target="_blank">README</a> file for this project's <a href="https://github.com/colarusso/flashcards" target="_blank">GitHub repo</a>.
+		This web app turns spreadsheets into flashcards. Make Airtable tables or CSV files with "front" and "back" columns, then connect or upload them under Settings. You can keep multiple decks and select one from the radio list before tapping Save &amp; Start. If you have a keyboard, you can press Space to flip a card, ↑ for <i>Knew It</i>, or ↓ for <i>Didn't Know It</i>. You can find more context and instructions in the <a href="https://github.com/colarusso/flashcards/blob/master/README.md#context--backstory" target="_blank">README</a> file for this project's <a href="https://github.com/colarusso/flashcards" target="_blank">GitHub repo</a>.
+		<h3>Card scores</h3>
+		<p>Each card's header shows two percentages, such as <strong>(50% | 50%)</strong>. The number <strong>before the |</strong> is the current card's estimated chance of a correct answer, based on your <em>Knew It</em> and <em>Didn't Know It</em> responses using a Wilson-score estimate. A new card starts at 50%.</p>
+		<p>The number <strong>after the |</strong> is the average of the scores for <em>all cards in your selected deck</em>: add up their individual percentages and divide by the number of cards, then round to a whole percent. This is a measure of your overall familiarity with that deck; it is <strong>not</strong> the mathematical probability of answering every card correctly in one attempt. Both numbers update as you review cards.</p>
+		<h3>Managing decks</h3>
+		<p>In Settings, you can upload multiple CSV files or connect to an Airtable base and choose from tables with <code>front</code> and <code>back</code> fields. Each listed deck shows its card count. Select a radio option and tap <strong>Save &amp; Start</strong> to study it. In CSV mode, <strong>Delete CSV</strong> permanently removes the selected CSV and its saved progress from this browser. Review history is kept separately for each deck.</p>
 		<h3>Credits</h3>
 		<p>This tool was designed and built by <a href="https://twitter.com/colarusso" target="_blank">@Colarusso</a>.</p>
 		<p> The thumbs up and arrow buttons you see when "voting," as well as in the homescreen icon, are the work of <a href="https://thenounproject.com/term/thumb-up/83151/" target="_blank">Antar</a>, <a href="https://thenounproject.com/term/arrow/37752/" target="_blank">Julien Miclo</a>, and <a href="https://thenounproject.com/term/e-learning/62522" target="_blank">Attilio Baghino</a> over at the Noun Project.
 		</p>
 		<h3>Privacy</h3>
 		<p>
-		We make use of Google Analytics to track visitor statistics, this includes the use of cookies. See <a href="https://policies.google.com/technologies/partner-sites">How Google uses data when you use our partner's sites or apps</a> (e.g., this site). We do not track the content of your spreadsheets. Airtable mode stores your data with Airtable and is subject to their terms of service. Local CSV mode stores the imported deck and review progress in this browser's local storage. Additionally, this site is hosted as a GitHub Page and presumably GitHub maintains associated server logs.
+		We make use of Google Analytics to track visitor statistics, this includes the use of cookies. See <a href="https://policies.google.com/technologies/partner-sites">How Google uses data when you use our partner's sites or apps</a> (e.g., this site). We do not track the content of your spreadsheets. Airtable stores the table's card content; for tables with all progress columns, review history is written to Airtable. For other Airtable tables and local CSV files, review progress is saved in this browser's local storage. Local CSV card content is also stored in this browser. Additionally, this site is hosted as a GitHub Page and presumably GitHub maintains associated server logs.
 		</p>
 	</div>
 </div>
@@ -182,7 +238,19 @@
 	var localDeckName = "";
 	var i = 0;
 	var afew = (new Date).getTime();
-	var LOCAL_DECK_KEY = "flashcards.localDeck.v1";
+	var LOCAL_DECK_KEY = "flashcards.localDeck.v1"; // Legacy single-CSV storage.
+	var LOCAL_DECKS_KEY = "flashcards.localDecks.v2";
+	var localDecks = [];
+	var selectedCsvId = "";
+	var selectedAirtableId = "";
+	var airtableTables = [];
+	var airtableLoadedSignature = "";
+	var airtableRequestSequence = 0;
+	var airtableRefreshTimer = null;
+	var activeAirtableTable = null;
+	var airtableBasicDeck = null;
+	var airtableBasicIds = [];
+	var sessionSource = "";
 
 	function createCookie(name,value,days) {
 		if (days) {
@@ -216,11 +284,15 @@
 	function loadCookies() {
 		if (readCookie("key")) $("#key").val(readCookie("key"));
 		if (readCookie("base")) $("#base").val(readCookie("base"));
-		if (readCookie("table")) $("#table").val(readCookie("table"));
+		selectedAirtableId = readCookie("tableId") || "";
 		if (readCookie("timeout")) $("#timeout").val(readCookie("timeout"));
 		if (readCookie("source")) $("#source").val(readCookie("source"));
 		$("#read_aloud").prop("checked", false);
 		loadLocalDeck();
+		$("#key, #base").on("input", function(){
+			clearTimeout(airtableRefreshTimer);
+			airtableRefreshTimer = setTimeout(function(){ refreshAirtableTables(false); }, 600);
+		});
 		updateSourceSettings();
 		updateReadAloudSettings();
 		populateVoiceOptions();
@@ -231,12 +303,12 @@
 	function saveSettings() {
 		var key = $("#key").val().trim();
 		var base = $("#base").val().trim();
-		var table = $("#table").val().trim();
+		var tableId = selectedAirtableId;
 		var timeout = $("#timeout").val();
 		createCookie("source",getSource(),365*100);
 		createCookie("key",key,365*100);
 		createCookie("base",base,365*100);
-		createCookie("table",table,365*100);
+		createCookie("tableId",tableId,365*100);
 		createCookie("timeout",timeout,365*100);
 	}
 
@@ -245,20 +317,54 @@
 
 	function updateSourceSettings() {
 		var local = getSource() === "local";
-		if (local) {
-			$("#airtable_settings").hide();
-			$("#local_csv_settings").show();
-		} else {
-			$("#local_csv_settings").hide();
-			$("#airtable_settings").show();
-		}
-		updateCsvStatus();
+		$("#airtable_settings").toggle(!local);
+		$("#local_csv_settings, #delete_csv_wrap").toggle(local);
+		$("#deck_selector_label").text(local ? "Choose a CSV" : "Choose an Airtable Table");
+		renderDeckChoices();
+		if (!local) refreshAirtableTables(false);
+	}
+
+	function renderDeckChoices() {
+		var container = $("#deck_choices").empty();
+		var local = getSource() === "local";
+		var options = local ? localDecks : airtableTables;
+		var selected = local ? selectedCsvId : selectedAirtableId;
+		options.forEach(function(item, index) {
+			var id = "deck_choice_"+index;
+			var count = local ? item.cards.length : item.count;
+			var countLabel = count === null || count === undefined
+				? (item.countError ? "card count unavailable" : "counting cards…")
+				: count+" card"+(count === 1 ? "" : "s");
+			var radio = $("<input>", {type:"radio", name:"deck_choice", id:id, value:item.id})
+				.prop("checked", item.id === selected)
+				.on("change", function(){
+					if (local) { selectedCsvId = item.id; selectLocalDeck(); persistLocalDeck(); }
+					else { selectedAirtableId = item.id; activeAirtableTable = null; airtableScores = null; }
+					saveSettings();
+				});
+			container.append($("<label>", {"class":"deck-option", "for":id})
+				.append($("<span>", {"class":"deck-radio-column"}).append(radio),
+					$("<span>", {"class":"deck-name-column"}).text(item.name+" — "+countLabel)));
+		});
+		$("#deck_status").text(local
+			? (options.length ? "" : "No CSV files loaded yet.")
+			: (options.length ? "" : (airtableLoadedSignature ? "No tables with front and back columns were found." : "Enter your token and Base ID to find tables.")));
+		$("#delete_csv_wrap button").prop("disabled", !selectedCsvId);
 	}
 
 	function saveSettingsAndStart() {
+		if (!validateSettings()) return;
 		saveSettings();
-		// Refresh the whole-deck average when starting (or changing) an Airtable deck.
+		sessionSource = getSource();
+		if (sessionSource === "local") selectLocalDeck();
+		else {
+			activeAirtableTable = airtableTables.filter(function(t){ return t.id === selectedAirtableId; })[0];
+			airtableBasicDeck = null;
+			airtableBasicIds = [];
+		}
+		// Refresh the whole-deck average on each Airtable start.
 		airtableScores = null;
+		currentLocalIndex = -1;
 		i = 0;
 		afew = (new Date).getTime();
 		load_card('front','slide');
@@ -320,36 +426,71 @@
 		speakText(card.innerText.trim());
 	}
 
+	function newCsvId() {
+		return "csv_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2, 10);
+	}
+
 	function loadLocalDeck() {
 		try {
-			var saved = localStorage.getItem(LOCAL_DECK_KEY);
-			if (!saved) return;
-			var parsed = JSON.parse(saved);
-			if (parsed && Array.isArray(parsed.cards)) {
-				localDeck = parsed.cards.map(normalizeLocalCard);
-				localDeckName = parsed.name || "Imported CSV";
+			var saved = localStorage.getItem(LOCAL_DECKS_KEY);
+			if (saved) {
+				var parsed = JSON.parse(saved);
+				if (parsed && Array.isArray(parsed.decks)) {
+					localDecks = parsed.decks.filter(function(d){ return d && Array.isArray(d.cards); }).map(function(d){
+						return {id:d.id || newCsvId(), name:d.name || "Imported CSV", cards:d.cards.map(normalizeLocalCard)};
+					});
+					selectedCsvId = parsed.selectedId || "";
+				}
+			} else {
+				// Migrate a deck saved by older versions; keep its review history.
+				var old = localStorage.getItem(LOCAL_DECK_KEY);
+				if (old) {
+					var legacy = JSON.parse(old);
+					if (legacy && Array.isArray(legacy.cards)) {
+						var migrated = {id:newCsvId(), name:legacy.name || "Imported CSV", cards:legacy.cards.map(normalizeLocalCard)};
+						localDecks = [migrated];
+						selectedCsvId = migrated.id;
+						persistLocalDeck();
+					}
+				}
 			}
+			selectLocalDeck();
 		} catch (e) {
 			console.log("Could not load local CSV data", e);
 		}
 	}
 
-	function persistLocalDeck() {
-		try {
-			localStorage.setItem(LOCAL_DECK_KEY, JSON.stringify({name: localDeckName, cards: localDeck}));
-		} catch (e) {
-			alert("The local deck could not be saved in this browser. ("+e+")");
+	function selectLocalDeck() {
+		var selected = localDecks.filter(function(d){ return d.id === selectedCsvId; })[0];
+		if (!selected) {
+			selected = localDecks[0];
+			selectedCsvId = selected ? selected.id : "";
 		}
-		updateCsvStatus();
+		localDeck = selected ? selected.cards : [];
+		localDeckName = selected ? selected.name : "";
+		currentLocalIndex = -1;
+		if (getSource() === "local") renderDeckChoices();
 	}
 
-	function updateCsvStatus() {
-		if (!$("#csv_status").length) return;
-		if (localDeck.length) {
-			$("#csv_status").text((localDeckName || "Imported CSV")+": "+localDeck.length+" card"+(localDeck.length === 1 ? "" : "s")+" loaded.");
-		} else {
-			$("#csv_status").text("No local CSV loaded.");
+	function persistLocalDeck() {
+		try {
+			localStorage.setItem(LOCAL_DECKS_KEY, JSON.stringify({selectedId:selectedCsvId, decks:localDecks}));
+		} catch (e) {
+			alert("CSV files could not be saved in this browser. ("+e+")");
 		}
+	}
+
+	function deleteSelectedCsv() {
+		var item = localDecks.filter(function(d){ return d.id === selectedCsvId; })[0];
+		if (!item) { alert("Select a CSV to delete."); return; }
+		if (!confirm("Delete "+item.name+" and its saved review progress from this browser?")) return;
+		localDecks = localDecks.filter(function(d){ return d.id !== selectedCsvId; });
+		selectedCsvId = localDecks.length ? localDecks[0].id : "";
+		selectLocalDeck();
+		persistLocalDeck();
+		i = 0;
+		deckScore = averageCardScore(localDeck);
+		updateScoreHeaders();
 	}
 
 	function normalizeNumber(value, fallback) {
@@ -460,28 +601,41 @@
 		}).filter(function(card){ return card.front !== "" || card.back !== ""; });
 	}
 
-	function importLocalCsv(file) {
-		if (!file) return;
-		var reader = new FileReader();
-		reader.onload = function(e) {
-			try {
-				var cards = parseCsv(e.target.result);
-				if (!cards.length) throw new Error("The CSV does not contain any flashcard rows.");
-				localDeck = cards;
-				localDeckName = file.name || "Imported CSV";
-				currentLocalIndex = -1;
-				i = 0;
-				afew = (new Date).getTime();
+	function readCsvFile(file) {
+		return new Promise(function(resolve, reject){
+			var reader = new FileReader();
+			reader.onload = function(e) {
+				try {
+					var cards = parseCsv(e.target.result);
+					if (!cards.length) throw new Error("No flashcard rows found.");
+					resolve({id:newCsvId(), name:file.name || "Imported CSV", cards:cards});
+				} catch (err) { reject(new Error(file.name+": "+err.message)); }
+			};
+			reader.onerror = function(){ reject(new Error("Could not read "+file.name)); };
+			reader.readAsText(file);
+		});
+	}
+
+	function importLocalCsv(files) {
+		if (!files || !files.length) return;
+		var imports = Array.prototype.slice.call(files);
+		Promise.all(imports.map(function(file){
+			return readCsvFile(file).then(function(deck){ return {deck:deck}; }, function(error){ return {error:error.message}; });
+		})).then(function(results){
+			var added = [], errors = [];
+			results.forEach(function(result){
+				if (result.error) errors.push(result.error);
+				else { localDecks.push(result.deck); added.push(result.deck); }
+			});
+			if (added.length) {
+				selectedCsvId = added[0].id;
+				selectLocalDeck();
 				persistLocalDeck();
-				alert("Loaded "+cards.length+" card"+(cards.length === 1 ? "" : "s")+" from "+localDeckName+".");
-				$("#csv_file").val("");
-			} catch (err) {
-				alert("Could not import that CSV. "+err.message);
-				$("#csv_file").val("");
+				i = 0;
 			}
-		};
-		reader.onerror = function() { alert("Could not read that CSV file."); };
-		reader.readAsText(file);
+			$("#csv_file").val("");
+			if (errors.length) alert("Some CSV files could not be imported:\n"+errors.join("\n"));
+		});
 	}
 
 	function displayValue(value) {
@@ -496,7 +650,7 @@
 		return {
 			app_id: $("#base").val().trim(),
 			app_key: $("#key").val().trim(),
-			table: $("#table").val().trim()
+			table: selectedAirtableId
 		};
 	}
 
@@ -507,6 +661,82 @@
 
 	function airtableHeaders() {
 		return { Authorization: "Bearer "+getAirtableConfig().app_key };
+	}
+
+	function airtableCredentialsSignature() {
+		return JSON.stringify([$("#key").val().trim(), $("#base").val().trim()]);
+	}
+
+	function refreshAirtableTables(force) {
+		if (getSource() !== "airtable") return;
+		var token = $("#key").val().trim();
+		var baseId = $("#base").val().trim();
+		var signature = airtableCredentialsSignature();
+		if (!token || !baseId) {
+			airtableRequestSequence++;
+			airtableLoadedSignature = "";
+			airtableTables = [];
+			selectedAirtableId = "";
+			renderDeckChoices();
+			return;
+		}
+		if (!force && signature === airtableLoadedSignature) return;
+		var requestId = ++airtableRequestSequence;
+		airtableLoadedSignature = signature;
+		airtableTables = [];
+		$("#deck_choices").empty();
+		$("#deck_status").text("Loading Airtable tables…");
+		var url = "https://api.airtable.com/v0/meta/bases/"+encodeURIComponent(baseId)+"/tables";
+		axios.get(url, {headers:{Authorization:"Bearer "+token}}).then(function(response){
+			if (requestId !== airtableRequestSequence) return;
+			airtableTables = (response.data.tables || []).filter(function(t){
+				var names = (t.fields || []).map(function(f){ return f.name; });
+				return names.indexOf("front") >= 0 && names.indexOf("back") >= 0;
+			}).map(function(t){
+				var names = (t.fields || []).map(function(f){ return f.name; });
+				return {id:t.id, name:t.name, count:null, countError:false,
+					fullSchema:["up", "down", "score", "last", "random"].every(function(f){ return names.indexOf(f) >= 0; })};
+			});
+			if (!airtableTables.some(function(t){ return t.id === selectedAirtableId; })) {
+				var oldName = readCookie("table") || "";
+				var legacyMatch = airtableTables.filter(function(t){ return t.name === oldName; })[0];
+				selectedAirtableId = legacyMatch ? legacyMatch.id : (airtableTables[0] ? airtableTables[0].id : "");
+			}
+			renderDeckChoices();
+			// Each table's records are paginated; count all pages, not just the first 100.
+			// Fetch sequentially to avoid rate-limit bursts across tables.
+			return airtableTables.reduce(function(chain, table){
+				return chain.then(function(){
+					if (requestId !== airtableRequestSequence) return;
+					return countAirtableRecords(baseId, table.id, token).then(function(count){
+						if (requestId !== airtableRequestSequence) return;
+						table.count = count;
+						renderDeckChoices();
+					}).catch(function(error){
+						if (requestId !== airtableRequestSequence) return;
+						console.log("Could not count Airtable table", error);
+						table.countError = true;
+						renderDeckChoices();
+					});
+				});
+			}, Promise.resolve());
+		}).catch(function(error){
+			if (requestId !== airtableRequestSequence) return;
+			airtableTables = [];
+			airtableLoadedSignature = "";
+			$("#deck_choices").empty();
+			var code = error.response && error.response.status;
+			$("#deck_status").text("Could not list tables ("+(code || error.message || error)+"). Check your Base ID and token's schema.bases:read scope.");
+		});
+	}
+
+	function countAirtableRecords(baseId, tableId, token, offset, count) {
+		var url = "https://api.airtable.com/v0/"+encodeURIComponent(baseId)+"/"+encodeURIComponent(tableId)+"?pageSize=100&fields%5B%5D=front"+
+			(offset ? "&offset="+encodeURIComponent(offset) : "");
+		return airtableGetWithRetry(url, {Authorization:"Bearer "+token}).then(function(response){
+			count = (count || 0)+(response.data.records || []).length;
+			return response.data.offset ? countAirtableRecords(baseId,tableId,token,response.data.offset,count) : count;
+		});
 	}
 
 	function check_written(last) {
@@ -571,32 +801,88 @@
 		});
 	}
 
-	function load_local_data() {
+	function load_local_data(cards) {
+		cards = cards || localDeck;
 		work = 1;
 		var eligible = [];
-		for (var idx = 0; idx < localDeck.length; idx++) {
-			if (normalizeNumber(localDeck[idx].last, 0) <= afew) eligible.push(idx);
+		for (var idx = 0; idx < cards.length; idx++) {
+			if (normalizeNumber(cards[idx].last, 0) <= afew) eligible.push(idx);
 		}
 		if (!eligible.length) {
 			afew = (new Date).getTime();
-			for (var idx2 = 0; idx2 < localDeck.length; idx2++) eligible.push(idx2);
+			for (var idx2 = 0; idx2 < cards.length; idx2++) eligible.push(idx2);
 		}
 		eligible.sort(function(a,b){
-			var scoreDiff = normalizeNumber(localDeck[a].score, 50) - normalizeNumber(localDeck[b].score, 50);
+			var scoreDiff = normalizeNumber(cards[a].score, 50) - normalizeNumber(cards[b].score, 50);
 			if (scoreDiff !== 0) return scoreDiff;
-			return String(localDeck[a].random).localeCompare(String(localDeck[b].random));
+			return String(cards[a].random).localeCompare(String(cards[b].random));
 		});
 		currentLocalIndex = eligible[0];
-		var item = localDeck[currentLocalIndex];
+		var item = cards[currentLocalIndex];
 		ups_r = normalizeNumber(item.up, 0);
 		downs_r = normalizeNumber(item.down, 0);
 		bscore = normalizeNumber(item.score, 50);
 		front = displayValue(item.front);
 		back = displayValue(item.back);
-		deckScore = averageCardScore(localDeck);
+		deckScore = averageCardScore(cards);
 		updateScoreHeaders();
 		$("#front_content").html(front);
 		work = 0;
+	}
+
+	function basicProgressKey() {
+		return "flashcards.airtableProgress.v1."+encodeURIComponent($("#base").val().trim())+"."+encodeURIComponent(selectedAirtableId);
+	}
+
+	function readBasicProgress() {
+		try { return JSON.parse(localStorage.getItem(basicProgressKey())) || {}; }
+		catch (e) { return {}; }
+	}
+
+	function basicCardsFromRecords(records) {
+		var progress = readBasicProgress();
+		return records.map(function(r){
+			var card = normalizeLocalCard(r.fields || {});
+			var saved = progress[r.id];
+			if (saved) {
+				card.up = normalizeNumber(saved.up, card.up);
+				card.down = normalizeNumber(saved.down, card.down);
+				card.score = normalizeNumber(saved.score, card.score);
+				card.last = normalizeNumber(saved.last, card.last);
+				card.random = saved.random || card.random;
+			}
+			return card;
+		});
+	}
+
+	function persistBasicProgress() {
+		var progress = readBasicProgress();
+		airtableBasicDeck.forEach(function(card, index){
+			progress[airtableBasicIds[index]] = {
+				up:card.up, down:card.down, score:card.score, last:card.last, random:card.random
+			};
+		});
+		try { localStorage.setItem(basicProgressKey(), JSON.stringify(progress)); }
+		catch (e) { alert("Could not save review progress for this Airtable table. ("+e+")"); }
+	}
+
+	function load_basic_airtable_data() {
+		if (airtableBasicDeck !== null) {
+			load_local_data(airtableBasicDeck);
+			return;
+		}
+		work = 1;
+		fetchAllAirtableRecords().then(function(records){
+			if (!records.length) throw new Error("The selected Airtable table has no cards.");
+			airtableBasicIds = records.map(function(r){ return r.id; });
+			airtableBasicDeck = basicCardsFromRecords(records);
+			load_local_data(airtableBasicDeck);
+		}).catch(function(error){
+			work = -1;
+			$.mobile.loading("hide");
+			alert("Could not load Airtable cards. ("+(error.message || error)+")");
+			$.mobile.changePage($('#settings'), {transition:"slide", reverse:true});
+		});
 	}
 
 	function validateSettings() {
@@ -614,9 +900,22 @@
 				alert("Cooling Off must be fewer than the total number of cards ("+localDeck.length+").");
 				return false;
 			}
-		} else if (!$("#key").val().trim() || !$("#base").val().trim() || !$("#table").val().trim()) {
-			alert("API Key / Token, Base ID, and Table Name are required for Airtable.");
-			return false;
+		} else {
+			if (!$("#key").val().trim() || !$("#base").val().trim()) {
+				alert("API Token and Base ID are required for Airtable.");
+				return false;
+			}
+			if (airtableLoadedSignature !== airtableCredentialsSignature()) {
+				alert("Airtable credentials have changed. Refresh the table list before starting.");
+				return false;
+			}
+			var selectedTable = airtableTables.filter(function(t){ return t.id === selectedAirtableId; })[0];
+			if (!selectedTable) { alert("Choose an Airtable table first. Check the token permissions if no tables appear."); return false; }
+			if (selectedTable.count === null) { alert("The card count is still loading or could not be loaded. Refresh tables to try again."); return false; }
+			if (timeout >= selectedTable.count) {
+				alert("Cooling Off must be fewer than the total number of cards ("+selectedTable.count+").");
+				return false;
+			}
 		}
 		return true;
 	}
@@ -629,6 +928,7 @@
 			go_to(side,transition);
 		} else if (side=="front") {
 			if (getSource() === "local") load_local_data();
+			else if (activeAirtableTable && !activeAirtableTable.fullSchema) load_basic_airtable_data();
 			else load_api_data("#"+side);
 			go_to(side,transition);
 		}
@@ -662,17 +962,19 @@
 		advanceCoolingOff();
 		var last = (new Date).getTime();
 
-		if (getSource() === "local") {
-			if (currentLocalIndex < 0 || !localDeck[currentLocalIndex]) return;
-			localDeck[currentLocalIndex].up = ups;
-			localDeck[currentLocalIndex].down = downs;
-			localDeck[currentLocalIndex].score = score;
+		if (getSource() === "local" || (activeAirtableTable && !activeAirtableTable.fullSchema)) {
+			var cards = getSource() === "local" ? localDeck : airtableBasicDeck;
+			if (!cards || currentLocalIndex < 0 || !cards[currentLocalIndex]) return;
+			cards[currentLocalIndex].up = ups;
+			cards[currentLocalIndex].down = downs;
+			cards[currentLocalIndex].score = score;
 			bscore = score;
-			deckScore = averageCardScore(localDeck);
+			deckScore = averageCardScore(cards);
 			updateScoreHeaders();
-			localDeck[currentLocalIndex].last = last;
-			localDeck[currentLocalIndex].random = Math.random().toString(36).substring(2, 8);
-			persistLocalDeck();
+			cards[currentLocalIndex].last = last;
+			cards[currentLocalIndex].random = Math.random().toString(36).substring(2, 8);
+			if (getSource() === "local") persistLocalDeck();
+			else persistBasicProgress();
 			work = 0;
 			load_card("front","slideup");
 			return;
@@ -721,11 +1023,11 @@
 		setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
 	}
 
-	function airtableGetWithRetry(url) {
-		return axios.get(url,{ headers: airtableHeaders() }).catch(function(error){
+	function airtableGetWithRetry(url, headers) {
+		return axios.get(url,{ headers: headers || airtableHeaders() }).catch(function(error){
 			if (error.response && error.response.status === 429) {
 				return new Promise(function(resolve){
-					setTimeout(function(){ resolve(airtableGetWithRetry(url)); }, 1000);
+					setTimeout(function(){ resolve(airtableGetWithRetry(url, headers)); }, 1000);
 				});
 			}
 			throw error;
@@ -744,9 +1046,9 @@
 	}
 
 	function airtableRecordsToCards(records) {
-		return records.map(function(r){
-			return normalizeLocalCard(r.fields || {});
-		});
+		return activeAirtableTable && !activeAirtableTable.fullSchema
+			? basicCardsFromRecords(records)
+			: records.map(function(r){ return normalizeLocalCard(r.fields || {}); });
 	}
 
 	function waitForAirtableIdle() {
@@ -759,6 +1061,7 @@
 	function exportCsv() {
 		saveSettings();
 		if (getSource() === "local") {
+			selectLocalDeck();
 			if (!localDeck.length) { alert("There is no local CSV deck to export."); return; }
 			downloadText((localDeckName || "flashcards").replace(/\.csv$/i, "")+"-export.csv", cardsToCsv(localDeck), "text/csv;charset=utf-8");
 			return;
@@ -768,7 +1071,8 @@
 		waitForAirtableIdle().then(function(){
 			return fetchAllAirtableRecords();
 		}).then(function(records){
-			downloadText(($("#table").val().trim() || "flashcards")+"-export.csv", cardsToCsv(airtableRecordsToCards(records)), "text/csv;charset=utf-8");
+			var selected = airtableTables.filter(function(t){ return t.id === selectedAirtableId; })[0];
+			downloadText(((selected && selected.name) || "flashcards")+"-export.csv", cardsToCsv(airtableRecordsToCards(records)), "text/csv;charset=utf-8");
 			$.mobile.loading("hide");
 		}).catch(function(error){
 			$.mobile.loading("hide");
@@ -777,7 +1081,7 @@
 	}
 
 	function resetLocalCounts() {
-		localDeck = localDeck.map(function(card){
+		localDeck.forEach(function(card){
 			card.up = 0;
 			card.down = 0;
 			card.score = 50;
@@ -820,6 +1124,7 @@
 	function resetCounts() {
 		saveSettings();
 		if (getSource() === "local") {
+			selectLocalDeck();
 			if (!localDeck.length) { alert("There is no local CSV deck to reset."); return; }
 			if (!confirm("Reset progress for all "+localDeck.length+" local cards? This sets up/down to 0 and score to 50.")) return;
 			resetLocalCounts();
@@ -827,6 +1132,17 @@
 			return;
 		}
 		if (!validateSettings()) return;
+		var table = airtableTables.filter(function(t){ return t.id === selectedAirtableId; })[0];
+		if (table && !table.fullSchema) {
+			if (!confirm("Reset locally saved progress for this Airtable table?")) return;
+			localStorage.removeItem(basicProgressKey());
+			airtableBasicDeck = null;
+			i = 0;
+			deckScore = 50;
+			updateScoreHeaders();
+			alert("Locally saved Airtable counts have been reset.");
+			return;
+		}
 		if (!confirm("Reset progress for every card in this Airtable table? This will write to Airtable and cannot be undone unless you have a backup.")) return;
 		$.mobile.loading("show");
 		fetchAllAirtableRecords().then(function(records){
@@ -864,6 +1180,7 @@
 		window.speechSynthesis.addEventListener("voiceschanged", populateVoiceOptions);
 	}
 
+	$(document).on("pageshow pagechange", function(){ document.title = "Flashcards"; });
 	$(document).on("pageshow", "#front, #back", function(){ readCardAloud(this.id); });
 	$(document).on("pagebeforeshow", "#settings", function(){ stopSpeaking(); updateSourceSettings(); });
 
