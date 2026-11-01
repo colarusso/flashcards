@@ -202,6 +202,7 @@
 		<p>The number <strong>after the |</strong> is the average of the scores for <em>all cards in your selected deck</em>: add up their individual percentages and divide by the number of cards, then round to a whole percent. This is a measure of your overall familiarity with that deck; it is <strong>not</strong> the mathematical probability of answering every card correctly in one attempt. Both numbers update as you review cards.</p>
 		<h3>Managing decks</h3>
 		<p>In Settings, you can upload multiple CSV files or connect to an Airtable base and choose from tables with <code>front</code> and <code>back</code> fields. Each listed deck shows its card count. Select a radio option and tap <strong>Save &amp; Start</strong> to study it. In CSV mode, <strong>Delete CSV</strong> permanently removes the selected CSV and its saved progress from this browser. Review history is kept separately for each deck.</p>
+		<p>You can also import a CSV directly from a link: add <code>?load=</code> followed by the URL of a <code>.csv</code> file to the app address (encode the CSV URL if it contains special characters). This selects the imported CSV in Settings; tap <strong>Save &amp; Start</strong> to review it. The CSV host must allow browser access (CORS). Reopening the same link selects your existing copy without resetting its scores.</p>
 		<h3>Credits</h3>
 		<p>This tool was designed and built by <a href="https://twitter.com/colarusso" target="_blank">@Colarusso</a>.</p>
 		<p> The thumbs up and arrow buttons you see when "voting," as well as in the homescreen icon, are the work of <a href="https://thenounproject.com/term/thumb-up/83151/" target="_blank">Antar</a>, <a href="https://thenounproject.com/term/arrow/37752/" target="_blank">Julien Miclo</a>, and <a href="https://thenounproject.com/term/e-learning/62522" target="_blank">Attilio Baghino</a> over at the Noun Project.
@@ -298,6 +299,7 @@
 		populateVoiceOptions();
 		try { $("#source").selectmenu("refresh"); } catch (e) {}
 		try { $("#read_aloud").checkboxradio("refresh"); } catch (e) {}
+		importCsvFromQuery();
 	}
 
 	function saveSettings() {
@@ -437,7 +439,7 @@
 				var parsed = JSON.parse(saved);
 				if (parsed && Array.isArray(parsed.decks)) {
 					localDecks = parsed.decks.filter(function(d){ return d && Array.isArray(d.cards); }).map(function(d){
-						return {id:d.id || newCsvId(), name:d.name || "Imported CSV", cards:d.cards.map(normalizeLocalCard)};
+						return {id:d.id || newCsvId(), name:d.name || "Imported CSV", cards:d.cards.map(normalizeLocalCard), sourceUrl:d.sourceUrl || ""};
 					});
 					selectedCsvId = parsed.selectedId || "";
 				}
@@ -635,6 +637,65 @@
 			}
 			$("#csv_file").val("");
 			if (errors.length) alert("Some CSV files could not be imported:\n"+errors.join("\n"));
+		});
+	}
+
+	// The ?load= query parameter adds a remote CSV exactly like a local upload.
+	// A previously imported URL selects its existing deck, preserving review history.
+	function importCsvFromQuery() {
+		var params = new URLSearchParams(window.location.search);
+		// Also support links copied while the app is showing a #settings/#front fragment.
+		if (!params.has("load") && window.location.hash.indexOf("?load=") >= 0) {
+			params = new URLSearchParams(window.location.hash.slice(window.location.hash.indexOf("?load=")));
+		}
+		if (!params.has("load")) return;
+		var remoteUrl;
+		try {
+			var value = (params.get("load") || "").trim();
+			if (!value) throw new Error("The load parameter is empty.");
+			remoteUrl = new URL(value, window.location.href);
+			if (!/^https?:$/.test(remoteUrl.protocol)) throw new Error("The CSV URL must use http:// or https://.");
+			if (!/\.csv$/i.test(remoteUrl.pathname)) throw new Error("The URL must point to a .csv file.");
+		} catch (error) {
+			$("#deck_status").text("Could not import CSV: "+error.message);
+			alert("Could not import CSV from ?load=: "+error.message);
+			return;
+		}
+
+		// Switch to CSV mode; the imported file becomes the selected deck.
+		$("#source").val("local");
+		updateSourceSettings();
+		try { $("#source").selectmenu("refresh"); } catch (e) {}
+		var existing = localDecks.filter(function(deck){ return deck.sourceUrl === remoteUrl.href; })[0];
+		if (existing) {
+			selectedCsvId = existing.id;
+			selectLocalDeck();
+			persistLocalDeck();
+			saveSettings();
+			return;
+		}
+
+		$("#deck_status").text("Loading CSV from URL…");
+		fetch(remoteUrl.href, {credentials:"omit", mode:"cors", referrerPolicy:"no-referrer"}).then(function(response) {
+			if (!response.ok) throw new Error("Download failed (HTTP "+response.status+").");
+			return response.text();
+		}).then(function(csvText) {
+			var cards = parseCsv(csvText);
+			if (!cards.length) throw new Error("No flashcard rows found.");
+			var name = decodeURIComponent(remoteUrl.pathname.split("/").pop()) || "Imported CSV.csv";
+			var deck = {id:newCsvId(), name:name, cards:cards, sourceUrl:remoteUrl.href};
+			localDecks.push(deck);
+			selectedCsvId = deck.id;
+			selectLocalDeck();
+			persistLocalDeck();
+			saveSettings();
+			i = 0;
+			$("#deck_status").text("Imported "+name+" ("+cards.length+" cards). Select Save & Start to review.");
+		}).catch(function(error) {
+			var reason = error && error.message ? error.message : String(error);
+			if (error instanceof TypeError) reason += " The file's server may not permit cross-origin (CORS) access.";
+			$("#deck_status").text("Could not import CSV: "+reason);
+			alert("Could not import CSV from ?load=: "+reason);
 		});
 	}
 

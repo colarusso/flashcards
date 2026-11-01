@@ -59,6 +59,22 @@ The string of text between `https://airtable.com/` and `/api/docs#curl/introduct
 
 There is no table-name field to fill in: compatible tables are listed automatically, with their number of cards. Select a radio option to choose the deck. The list refreshes when you change credentials or press **Refresh Airtable Tables**.
 
+### Loading a CSV from a link
+
+You can share a link that imports a CSV into the **Local CSV** list. Append `?load=` and the URL of a `.csv` file to the flashcard app URL, for example:
+
+```text
+https://example.com/flashcards/?load=https%3A%2F%2Fexample.org%2Fcards%2Fgeography.csv
+```
+
+The app downloads the CSV, checks for `front` and `back` columns, and adds it to the saved CSV decks **with its filename and card count**. The imported deck is selected automatically; click **Save & Start** to begin studying. Existing CSV decks remain untouched. Revisiting the **same URL** selects the previously imported copy (including its review progress) rather than creating a duplicate. Delete that copy first if you need to re-import revised contents from the same URL.
+
+**Requirements:** The link must point to an HTTP(S) URL whose path ends in `.csv` (case insensitive; CSV URLs may include query parameters). The server hosting the CSV must permit cross-origin browser requests through **CORS** unless the file is served from the flashcards app's own origin. A normal file download link that blocks CORS, requires login, or redirects to HTML will not work. Failed imports show an error in Settings. Encode the CSV URL with `encodeURIComponent` so any `?` or `&` within the CSV URL is handled correctly. For example:
+
+```javascript
+const shareLink = 'https://example.com/flashcards/?load=' + encodeURIComponent('https://example.org/cards/geography.csv?version=2');
+```
+
 ### Multiple CSV storage
 
 Local CSV decks and their review progress are stored in your browser’s `localStorage`, not uploaded to a server. Uploading files adds them to the list (it does not overwrite existing files), even if the filenames match. Large decks may reach the browser’s storage quota. Delete CSV permanently removes just the selected local file. Tables without Airtable progress fields use per-base, per-table browser storage for scoring; on another device, those scores will not follow you.
