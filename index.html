@@ -116,7 +116,7 @@
 <div data-role="page" id="front">
 	<div class="ui-header ui-bar-b" data-role="header" data-id="myheader" data-theme="b">
 		<a href="#settings" class="ui-link ui-btn-left ui-btn ui-icon-gear ui-btn-icon-notext ui-shadow ui-corner-all" data-iconpos="notext" data-icon="gear" data-direction="reverse" data-transition="slide"></a>
-		<h1 class="ui-title">Front (<span id="con1">50</span>%)</h1>
+		<h1 class="ui-title">Front (<span id="con1">50</span>%|<span id="deck1">50</span>%)</h1>
 	</div>
 	<div id="front_content" data-role="content" class="card ui-content" onClick="$('#myfooter').hide();load_card('back','flip');setTimeout(function(){$('#myfooter').show()},400);">
 	</div>
@@ -124,7 +124,7 @@
 
 <div data-role="page" id="back">
 	<div data-role="header" data-id="myheader" data-theme="b">
-		<h1>Back (<span id="con2">50</span>%)</h1>
+		<h1>Back (<span id="con2">50</span>%|<span id="deck2">50</span>%)</h1>
 	</div>
 	<div id="back_content" data-role="content" class="card" onClick="$('#myfooter').hide();$.mobile.changePage('#front', { transition: 'flip',reverse: true});">
 	</div>
@@ -166,6 +166,10 @@
 	var debug = 0;
 	var work = 0;
 	var bscore = "";
+	var deckScore = 50;
+	var airtableScores = null;
+	var airtableScoreTotal = 0;
+	var airtableCardCount = 0;
 	var back = "";
 	var front = "";
 	var ups = 0;
@@ -253,6 +257,8 @@
 
 	function saveSettingsAndStart() {
 		saveSettings();
+		// Refresh the whole-deck average when starting (or changing) an Airtable deck.
+		airtableScores = null;
 		i = 0;
 		afew = (new Date).getTime();
 		load_card('front','slide');
@@ -350,6 +356,47 @@
 		if (value === undefined || value === null || value === "") return fallback;
 		var n = Number(value);
 		return isFinite(n) ? n : fallback;
+	}
+
+	function averageCardScore(cards) {
+		if (!cards.length) return 50;
+		var total = cards.reduce(function(sum, card){
+			return sum + normalizeNumber(card.score, 50);
+		}, 0);
+		return Math.round(total / cards.length);
+	}
+
+	function updateScoreHeaders() {
+		$("#con1, #con2").text(bscore);
+		$("#deck1, #deck2").text(deckScore);
+	}
+
+	function loadAirtableScores() {
+		if (airtableScores !== null) return Promise.resolve();
+		return fetchAllAirtableRecords().then(function(records){
+			airtableScores = {};
+			airtableScoreTotal = 0;
+			airtableCardCount = records.length;
+			records.forEach(function(item){
+				var score = normalizeNumber((item.fields || {}).score, 50);
+				airtableScores[item.id] = score;
+				airtableScoreTotal += score;
+			});
+			deckScore = airtableCardCount ? Math.round(airtableScoreTotal / airtableCardCount) : 50;
+		});
+	}
+
+	function updateAirtableScore(id, score) {
+		if (airtableScores === null) return;
+		if (Object.prototype.hasOwnProperty.call(airtableScores, id)) {
+			airtableScoreTotal += score - airtableScores[id];
+		} else {
+			airtableScoreTotal += score;
+			airtableCardCount++;
+		}
+		airtableScores[id] = score;
+		deckScore = Math.round(airtableScoreTotal / airtableCardCount);
+		updateScoreHeaders();
 	}
 
 	function normalizeLocalCard(card) {
@@ -492,7 +539,11 @@
 	function load_api_data(target) {
 		work = 1;
 		var apicall = airtableBaseUrl()+"/?sort[0][field]=score&sort[0][direction]=asc&sort[1][field]=random&filterByFormula="+encodeURIComponent("({last}<="+afew+")")+"&limit=1";
-		axios.get(apicall,{ headers: airtableHeaders() }).then(function(response){
+		Promise.all([
+			axios.get(apicall,{ headers: airtableHeaders() }),
+			loadAirtableScores()
+		]).then(function(results){
+			var response = results[0];
 			var item = response.data.records && response.data.records[0];
 			if (!item) throw new Error("No eligible card was returned. Make sure Cooling Off is smaller than the number of cards.");
 			record = item.id;
@@ -501,7 +552,8 @@
 			bscore = normalizeNumber(item.fields.score, 50);
 			front = displayValue(item.fields.front);
 			back = displayValue(item.fields.back);
-			$("#con1").html(bscore);
+			updateAirtableScore(record, bscore);
+			updateScoreHeaders();
 			$("#front_content").html(front);
 			work = 0;
 		}).catch(function(error){
@@ -541,7 +593,8 @@
 		bscore = normalizeNumber(item.score, 50);
 		front = displayValue(item.front);
 		back = displayValue(item.back);
-		$("#con1").html(bscore);
+		deckScore = averageCardScore(localDeck);
+		updateScoreHeaders();
 		$("#front_content").html(front);
 		work = 0;
 	}
@@ -571,7 +624,7 @@
 	function load_card(side,transition) {
 		if (!validateSettings()) return;
 		if (side=="back") {
-			$("#con2").html(bscore);
+			updateScoreHeaders();
 			$("#back_content").html(back);
 			go_to(side,transition);
 		} else if (side=="front") {
@@ -606,8 +659,6 @@
 		downs = Number(down) + Number(downs_r);
 		var votes = Number(ups) + Number(downs);
 		var score = Math.round(((Number(ups) + 2)/(votes + 4))*100);
-		$("#con1").html(score);
-		$("#con2").html(score);
 		advanceCoolingOff();
 		var last = (new Date).getTime();
 
@@ -616,6 +667,9 @@
 			localDeck[currentLocalIndex].up = ups;
 			localDeck[currentLocalIndex].down = downs;
 			localDeck[currentLocalIndex].score = score;
+			bscore = score;
+			deckScore = averageCardScore(localDeck);
+			updateScoreHeaders();
 			localDeck[currentLocalIndex].last = last;
 			localDeck[currentLocalIndex].random = Math.random().toString(36).substring(2, 8);
 			persistLocalDeck();
@@ -630,6 +684,8 @@
 			{ fields: { up: ups, down: downs, score: score, last: last, random: Math.random().toString(36).substring(2, 3) } },
 			{ headers: airtableHeaders() }
 		).then(function(response){
+			bscore = score;
+			updateAirtableScore(record, score);
 			check_written(last);
 		}).catch(function(error){
 			console.log(error);
@@ -733,6 +789,8 @@
 		i = 0;
 		afew = (new Date).getTime();
 		persistLocalDeck();
+		deckScore = averageCardScore(localDeck);
+		updateScoreHeaders();
 	}
 
 	function airtablePatchWithRetry(payload) {
@@ -775,6 +833,9 @@
 			return patchAirtableResetBatch(records, 0).then(function(){ return records.length; });
 		}).then(function(count){
 			$.mobile.loading("hide");
+			airtableScores = null;
+			deckScore = 50;
+			updateScoreHeaders();
 			i = 0;
 			afew = (new Date).getTime();
 			alert("Reset counts for "+count+" Airtable card"+(count === 1 ? "" : "s")+".");
