@@ -219,6 +219,7 @@
 	var bscore = "";
 	var deckScore = 50;
 	var airtableScores = null;
+	var airtableSelectionCards = null;
 	var airtableScoreTotal = 0;
 	var airtableCardCount = 0;
 	var back = "";
@@ -231,8 +232,6 @@
 	var currentLocalIndex = -1;
 	var localDeck = [];
 	var localDeckName = "";
-	var i = 0;
-	var afew = (new Date).getTime();
 	var LOCAL_DECK_KEY = "flashcards.localDeck.v1"; // Legacy single-CSV storage.
 	var LOCAL_DECKS_KEY = "flashcards.localDecks.v2";
 	var localDecks = [];
@@ -335,7 +334,7 @@
 				.prop("checked", item.id === selected)
 				.on("change", function(){
 					if (local) { selectedCsvId = item.id; selectLocalDeck(); persistLocalDeck(); }
-					else { selectedAirtableId = item.id; activeAirtableTable = null; airtableScores = null; }
+					else { selectedAirtableId = item.id; activeAirtableTable = null; airtableScores = null; airtableSelectionCards = null; }
 					saveSettings();
 				});
 			container.append($("<label>", {"class":"deck-option", "for":id})
@@ -358,11 +357,10 @@
 			airtableBasicDeck = null;
 			airtableBasicIds = [];
 		}
-		// Refresh the whole-deck average on each Airtable start.
+		// Refresh the cached Airtable data and deck average on each start.
 		airtableScores = null;
+		airtableSelectionCards = null;
 		currentLocalIndex = -1;
-		i = 0;
-		afew = (new Date).getTime();
 		load_card('front','slide');
 	}
 
@@ -484,7 +482,6 @@
 		selectedCsvId = localDecks.length ? localDecks[0].id : "";
 		selectLocalDeck();
 		persistLocalDeck();
-		i = 0;
 		deckScore = averageCardScore(localDeck);
 		updateScoreHeaders();
 	}
@@ -512,6 +509,13 @@
 		if (airtableScores !== null) return Promise.resolve();
 		return fetchAllAirtableRecords().then(function(records){
 			airtableScores = {};
+			// Keep the full table in memory for exact question-count-based selection.
+			// Airtable's last field preserves review order between sessions/devices.
+			airtableSelectionCards = records.map(function(item){
+				var card = normalizeLocalCard(item.fields || {});
+				card.id = item.id;
+				return card;
+			});
 			airtableScoreTotal = 0;
 			airtableCardCount = records.length;
 			records.forEach(function(item){
@@ -627,8 +631,7 @@
 				selectedCsvId = added[0].id;
 				selectLocalDeck();
 				persistLocalDeck();
-				i = 0;
-			}
+					}
 			$("#csv_file").val("");
 			if (errors.length) alert("Some CSV files could not be imported:\n"+errors.join("\n"));
 		});
@@ -683,8 +686,7 @@
 			selectLocalDeck();
 			persistLocalDeck();
 			saveSettings();
-			i = 0;
-			$("#deck_status").text("Imported "+name+" ("+cards.length+" cards). Select Save & Start to review.");
+				$("#deck_status").text("Imported "+name+" ("+cards.length+" cards). Select Save & Start to review.");
 		}).catch(function(error) {
 			var reason = error && error.message ? error.message : String(error);
 			if (error instanceof TypeError) reason += " The file's server may not permit cross-origin (CORS) access.";
@@ -794,64 +796,62 @@
 		});
 	}
 
-	function check_written(last) {
-		if (getSource() !== "airtable") {
-			work = 0;
-			load_card("front","slideup");
-			return;
+
+	// The N most recently answered *distinct cards* must sit out the next N
+	// questions. Previous code advanced a shared timestamp cutoff every N
+	// answers, which could immediately re-enable the most recently seen card.
+	function eligibleCardIndices(cards, coolingOff) {
+		var previouslyAnswered = [];
+		cards.forEach(function(card, index){
+			var last = normalizeNumber(card.last, 0);
+			if (last > 0) previouslyAnswered.push({index:index, last:last});
+		});
+		previouslyAnswered.sort(function(a,b){ return b.last - a.last || a.index - b.index; });
+		var excluded = {};
+		previouslyAnswered.slice(0, coolingOff).forEach(function(item){ excluded[item.index] = true; });
+		var eligible = [];
+		for (var j = 0; j < cards.length; j++) {
+			if (!excluded[j]) eligible.push(j);
 		}
-		if (work == 0) {
-			load_card("front","slideup");
-		} else if (work == 1) {
-			if ($.mobile.loading().is(':hidden')) $.mobile.loading("show");
-			var apicall = airtableBaseUrl()+"/?filterByFormula="+encodeURIComponent("AND((RECORD_ID() = '"+record+"'),({last}<="+last+"))");
-			axios.get(apicall,{ headers: airtableHeaders() }).then(function(response){
-				if (response.data.records[0] != undefined) {
-					work = 0;
-					check_written();
-				} else {
-					setTimeout(function () { check_written(last); }, 100);
-				}
-			}).catch(function(error){
-				console.log(error);
-				alert("There was a problem contacting your Airtable. ("+error+")");
-				$.mobile.loading("hide");
-				work = 0;
-			});
-		}
+		return eligible;
+	}
+
+	function chooseCardIndex(cards) {
+		var eligible = eligibleCardIndices(cards, Number($("#timeout").val()));
+		if (!eligible.length) throw new Error("No eligible cards. Cooling Off must be smaller than the deck size.");
+		eligible.sort(function(a,b){
+			var scoreDiff = normalizeNumber(cards[a].score, 50) - normalizeNumber(cards[b].score, 50);
+			if (scoreDiff !== 0) return scoreDiff;
+			return String(cards[a].random).localeCompare(String(cards[b].random));
+		});
+		return eligible[0];
+	}
+
+	function nextReviewTimestamp(cards) {
+		var latest = 0;
+		cards.forEach(function(card){ latest = Math.max(latest, normalizeNumber(card.last, 0)); });
+		// Ensure strictly increasing order even for rapid clicks in one millisecond.
+		return Math.max(Date.now(), latest + 1);
 	}
 
 	function load_api_data(target) {
 		work = 1;
-		var apicall = airtableBaseUrl()+"/?sort[0][field]=score&sort[0][direction]=asc&sort[1][field]=random&filterByFormula="+encodeURIComponent("({last}<="+afew+")")+"&limit=1";
-		Promise.all([
-			axios.get(apicall,{ headers: airtableHeaders() }),
-			loadAirtableScores()
-		]).then(function(results){
-			var response = results[0];
-			var item = response.data.records && response.data.records[0];
-			if (!item) throw new Error("No eligible card was returned. Make sure Cooling Off is smaller than the number of cards.");
+		loadAirtableScores().then(function(){
+			var item = airtableSelectionCards[chooseCardIndex(airtableSelectionCards)];
 			record = item.id;
-			ups_r = normalizeNumber(item.fields.up, 0);
-			downs_r = normalizeNumber(item.fields.down, 0);
-			bscore = normalizeNumber(item.fields.score, 50);
-			front = displayValue(item.fields.front);
-			back = displayValue(item.fields.back);
-			updateAirtableScore(record, bscore);
+			ups_r = normalizeNumber(item.up, 0);
+			downs_r = normalizeNumber(item.down, 0);
+			bscore = normalizeNumber(item.score, 50);
+			front = displayValue(item.front);
+			back = displayValue(item.back);
 			updateScoreHeaders();
 			$("#front_content").html(front);
 			work = 0;
 		}).catch(function(error){
 			console.log(error);
-			var status = error.response && error.response.status;
-			if (status == 422) {
-				alert("Make sure your table has the following columns: front, back, up, down, score, last, and random. ("+error+")");
-			} else {
-				alert("Make sure your Airtable credentials and table info are correct and that Cooling Off is less than your total number of cards. ("+(error.message || error)+")");
-			}
-			work = -1;
 			$.mobile.loading("hide");
-			afew = (new Date).getTime();
+			alert("Could not load eligible Airtable cards. ("+(error.message || error)+")");
+			work = -1;
 			$.mobile.changePage($('#settings'), { transition: "slide", reverse: true});
 		});
 	}
@@ -859,30 +859,24 @@
 	function load_local_data(cards) {
 		cards = cards || localDeck;
 		work = 1;
-		var eligible = [];
-		for (var idx = 0; idx < cards.length; idx++) {
-			if (normalizeNumber(cards[idx].last, 0) <= afew) eligible.push(idx);
+		try {
+			currentLocalIndex = chooseCardIndex(cards);
+			var item = cards[currentLocalIndex];
+			ups_r = normalizeNumber(item.up, 0);
+			downs_r = normalizeNumber(item.down, 0);
+			bscore = normalizeNumber(item.score, 50);
+			front = displayValue(item.front);
+			back = displayValue(item.back);
+			deckScore = averageCardScore(cards);
+			updateScoreHeaders();
+			$("#front_content").html(front);
+			work = 0;
+		} catch(error) {
+			console.log(error);
+			work = -1;
+			alert("Could not load eligible cards. ("+(error.message || error)+")");
+			$.mobile.changePage($('#settings'), {transition:"slide", reverse:true});
 		}
-		if (!eligible.length) {
-			afew = (new Date).getTime();
-			for (var idx2 = 0; idx2 < cards.length; idx2++) eligible.push(idx2);
-		}
-		eligible.sort(function(a,b){
-			var scoreDiff = normalizeNumber(cards[a].score, 50) - normalizeNumber(cards[b].score, 50);
-			if (scoreDiff !== 0) return scoreDiff;
-			return String(cards[a].random).localeCompare(String(cards[b].random));
-		});
-		currentLocalIndex = eligible[0];
-		var item = cards[currentLocalIndex];
-		ups_r = normalizeNumber(item.up, 0);
-		downs_r = normalizeNumber(item.down, 0);
-		bscore = normalizeNumber(item.score, 50);
-		front = displayValue(item.front);
-		back = displayValue(item.back);
-		deckScore = averageCardScore(cards);
-		updateScoreHeaders();
-		$("#front_content").html(front);
-		work = 0;
 	}
 
 	function basicProgressKey() {
@@ -1001,25 +995,19 @@
 		}
 	}
 
-	function advanceCoolingOff() {
-		i++;
-		if (i >= Number($("#timeout").val())) {
-			afew = (new Date).getTime();
-			i = 0;
-		}
-	}
 
 	function write_card(up,down) {
+		// Ignore duplicate votes while a card is loading or an Airtable write is pending.
+		if (work !== 0) return;
 		ups = Number(up) + Number(ups_r);
 		downs = Number(down) + Number(downs_r);
 		var votes = Number(ups) + Number(downs);
 		var score = Math.round(((Number(ups) + 2)/(votes + 4))*100);
-		advanceCoolingOff();
-		var last = (new Date).getTime();
 
 		if (getSource() === "local" || (activeAirtableTable && !activeAirtableTable.fullSchema)) {
 			var cards = getSource() === "local" ? localDeck : airtableBasicDeck;
 			if (!cards || currentLocalIndex < 0 || !cards[currentLocalIndex]) return;
+			var last = nextReviewTimestamp(cards);
 			cards[currentLocalIndex].up = ups;
 			cards[currentLocalIndex].down = downs;
 			cards[currentLocalIndex].score = score;
@@ -1036,14 +1024,26 @@
 		}
 
 		var apicall = airtableBaseUrl()+"/"+encodeURIComponent(record);
+		var last = nextReviewTimestamp(airtableSelectionCards);
+		var random = Math.random().toString(36).substring(2, 8);
 		work = 1;
 		axios.patch(apicall,
-			{ fields: { up: ups, down: downs, score: score, last: last, random: Math.random().toString(36).substring(2, 3) } },
+			{ fields: { up: ups, down: downs, score: score, last: last, random: random } },
 			{ headers: airtableHeaders() }
 		).then(function(response){
+			// Only record the answer after Airtable confirms it was saved.
+			var current = airtableSelectionCards.filter(function(card){ return card.id === record; })[0];
+			if (current) {
+				current.up = ups;
+				current.down = downs;
+				current.score = score;
+				current.last = last;
+				current.random = random;
+			}
 			bscore = score;
 			updateAirtableScore(record, score);
-			check_written(last);
+			work = 0;
+			load_card("front", "slideup");
 		}).catch(function(error){
 			console.log(error);
 			$.mobile.loading("hide");
@@ -1145,8 +1145,6 @@
 			return card;
 		});
 		currentLocalIndex = -1;
-		i = 0;
-		afew = (new Date).getTime();
 		persistLocalDeck();
 		deckScore = averageCardScore(localDeck);
 		updateScoreHeaders();
@@ -1192,7 +1190,6 @@
 			if (!confirm("Reset locally saved progress for this Airtable table?")) return;
 			localStorage.removeItem(basicProgressKey());
 			airtableBasicDeck = null;
-			i = 0;
 			deckScore = 50;
 			updateScoreHeaders();
 			alert("Locally saved Airtable counts have been reset.");
@@ -1205,10 +1202,9 @@
 		}).then(function(count){
 			$.mobile.loading("hide");
 			airtableScores = null;
+			airtableSelectionCards = null;
 			deckScore = 50;
 			updateScoreHeaders();
-			i = 0;
-			afew = (new Date).getTime();
 			alert("Reset counts for "+count+" Airtable card"+(count === 1 ? "" : "s")+".");
 		}).catch(function(error){
 			$.mobile.loading("hide");
