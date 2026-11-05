@@ -15,9 +15,9 @@ Since passing the bar, I haven't really had the need to commit such a large amou
 
 ## How To
 
-You can use Airtable as described below, or select **Local CSV** in Settings and upload **multiple CSV files** with `front` and `back` columns. The saved CSV files and compatible Airtable tables appear as radio options above **Cooling Off**, each showing its card count. Choose the deck you want, then click **Save & Start**. In Local CSV mode, **Delete CSV** removes the selected file and its saved review history from this browser; **Export CSV** and **Reset Counts** apply only to the selected deck. Older single-CSV browser data is migrated automatically.
+You can use Airtable as described below, or select **Local CSV** in Settings and upload **multiple CSV files** with `front` and `back` columns. The saved CSV files and compatible Airtable tables appear as checkboxes above **Cooling Off**, each showing its card count. Check one or more decks and click **Save & Start** to study all of their cards together. Each card's review history is saved in its original CSV or Airtable table, so selecting a smaller group later retains the updated scores. In Local CSV mode, **Delete selected CSVs** removes all checked files and their saved review history from this browser; **Export CSV** combines cards from all checked decks into one CSV; **Reset Counts** resets the checked decks only. Older single-CSV browser data is migrated automatically.
 
-**Cooling Off** controls the minimum number of *other questions* that must be shown before a card can return. For example, with Cooling Off set to `2`, answering A means neither the next question nor the one after that can be A; A becomes eligible on the third subsequent question. Set it to `0` to allow immediate repeats. This is enforced per card, not by an elapsed time or a shared counter. It must be smaller than the selected deck’s card count. Each card’s `last` review value stores its position in the recent review order so the exclusion survives restarting the app (for CSV/local progress in this browser and for full-progress Airtable tables via their saved `last` field).
+**Cooling Off** controls the minimum number of *other questions* that must be shown before a card can return. For example, with Cooling Off set to `2`, answering A means neither the next question nor the one after that can be A; A becomes eligible on the third subsequent question. Set it to `0` to allow immediate repeats. This is enforced per card, not by an elapsed time or a shared counter. It must be smaller than the total card count of the selected decks. Each card’s `last` review value stores its position in the recent review order so the exclusion survives restarting the app (for CSV/local progress in this browser and for full-progress Airtable tables via their saved `last` field).
 
 0. Create an [Airtable](https://airtable.com/) account if you don't already have one.
 1. Create one or more Airtable tables with at least **front** and **back** fields. For scores and review history to sync back to Airtable, add **up**, **down**, **score**, **last**, and **random** fields (the first four are number fields). Tables that only have **front** and **back**, or lack some progress fields, can still be reviewed: their progress is stored in your browser instead. You can use [this base](https://airtable.com/invite/l?inviteId=inveUUpZ4jP9hE66M&inviteToken=51b69eab0d648b22ff6dc9507089b0572664d33cfb197d14f84e1d0e00034d98) as a template if you like. Just click on the title then "Duplicate Base." You can then add your own tables.
@@ -26,7 +26,7 @@ You can use Airtable as described below, or select **Local CSV** in Settings and
 
 2. Fill your Airtable with your cards by placing your desired text or the URL of an image in both the "front" and "back" cells of a row. The other columns will capture the history of your interactions (e.g., how many times you got it right).
 3. Create an Airtable [personal access token](https://airtable.com/create/tokens) with **schema.bases:read** and **data.records:read** scopes, plus **data.records:write** if using the progress columns. Give it access to the base you intend to use. Find that base's ID ([instructions](#your-base-id) below).
-4. Open the app, select **Airtable**, and enter only the **token** and **Base ID**. The app automatically lists tables that have `front` and `back` fields and counts their records (including tables with more than 100 cards). Choose a table and click **Save & Start**. Use **Refresh Airtable Tables** to rescan after creating or modifying tables.
+4. Open the app, select **Airtable**, and enter only the **token** and **Base ID**. The app automatically lists tables that have `front` and `back` fields and counts their records (including tables with more than 100 cards). Check one or more tables and click **Save & Start**. Use **Refresh Airtable Tables** to rescan after creating or modifying tables.
 
 ### Saving the app
 
@@ -36,9 +36,9 @@ When you bookmark the app or add it to your phone's home screen, its default nam
 
 * If you are using a keyboard, press Space to flip a card, ↑ for <i>Knew It</i>, or ↓ for <i>Didn't Know It</i>.
 * You can clear out the history of your interactions by editing your table directly (e.g., deleting all the entries other than *front* and *back*).
-* The two percentages in the parenthetical at the top of a card are `(card% | deck%)`. The first is the system's prediction that you will get the current card right; it starts at 50% and moves up or down based on your interactions. The system moves cards with the lowest score to the top of your stack. This score is an approximation of the [Wilson Confidence Interval](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Wilson_score_interval). The second percentage is the average score across **all** cards in the current deck (sum of the cards' scores divided by the number of cards, rounded to a whole percent). It is a measure of overall readiness, not the mathematical probability of getting every card right in one attempt.
+* The two percentages in the parenthetical at the top of a card are `(card% | deck%)`. The first is the system's prediction that you will get the current card right; it starts at 50% and moves up or down based on your interactions. The system moves cards with the lowest score to the top of your stack. This score is an approximation of the [Wilson Confidence Interval](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Wilson_score_interval). The second percentage is the average score across **all** cards in all selected decks (sum of the cards' scores divided by the number of cards, rounded to a whole percent). It is a measure of overall readiness, not the mathematical probability of getting every card right in one attempt.
 * If you place the url for an image (`.jpg`, `.gif`, or `.png`) in either the "front" or "back" column of your sheet, the web app will display the image (e.g., the picture of a state flag from wikipedia).
-* You can add multiple tables to a single base and select between them in the web app; a selected table's review scores are kept separate.  
+* You can add multiple tables to a single base and study several together; each table's review scores remain separate and are preserved when you later select only that table.  
 * You aren't restricted to plain text. You can use html to when wrting your cards.
 
 *Note: [SeRiouS](https://www.spacedrepetition.com/) offers a virtual flashcard system for bar prep similar to the one described above. It didn't exist back when I took the bar, but if you don't want to create a few thousand cards from scratch, they have a nice set of decks made by professionals. Also, the company's run by a good friend of mine. FWIW, I do **not** have a financial stake in the company. I just find it interesting. That being said, I'm sure not everyone reading this is studying for the bar.*
@@ -59,7 +59,7 @@ The string of text between `https://airtable.com/` and `/api/docs#curl/introduct
 
 ### Choosing a table
 
-There is no table-name field to fill in: compatible tables are listed automatically, with their number of cards. Select a radio option to choose the deck. The list refreshes when you change credentials or press **Refresh Airtable Tables**.
+There is no table-name field to fill in: compatible tables are listed automatically, with their number of cards. Check any combination of tables to include in the study session. The list refreshes when you change credentials or press **Refresh Airtable Tables**.
 
 ### Loading a CSV from a link
 
@@ -79,4 +79,10 @@ const shareLink = 'https://example.com/flashcards/?load=' + encodeURIComponent('
 
 ### Multiple CSV storage
 
-Local CSV decks and their review progress are stored in your browser’s `localStorage`, not uploaded to a server. Uploading files adds them to the list (it does not overwrite existing files), even if the filenames match. Large decks may reach the browser’s storage quota. Delete CSV permanently removes just the selected local file. Tables without Airtable progress fields use per-base, per-table browser storage for scoring; on another device, those scores will not follow you.
+Local CSV decks and their review progress are stored in your browser’s `localStorage`, not uploaded to a server. Uploading files adds them to the list (it does not overwrite existing files), even if the filenames match. Large decks may reach the browser’s storage quota. Delete selected CSVs permanently removes the checked local files. Export CSV produces a merged CSV if multiple decks are checked; Reset Counts resets all checked decks. Tables without Airtable progress fields use per-base, per-table browser storage for scoring; on another device, those scores will not follow you.
+
+### Studying multiple sources together
+
+The checkboxes apply within the chosen source type: select several saved CSVs in **Local CSV** mode, or several compatible tables in **Airtable** mode. The study queue and the percentage after the `|` include cards from all checked decks. **Cooling Off** applies to the combined queue. Selections are saved across visits; at least one deck must be checked before starting. Changes to a card's score, response counts, and last-review order are written back to that card's original source—not to a new merged deck. Airtable tables with progress fields write directly to their respective tables, while tables without them keep their own per-base, per-table progress in this browser.
+
+**Reset Counts** and **Delete selected CSVs** affect all checked items and ask for confirmation. **Export CSV** combines checked decks into one CSV; its original deck membership is not preserved in that exported file.
