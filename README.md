@@ -15,7 +15,7 @@ Since passing the bar, I haven't really had the need to commit such a large amou
 
 ## How To
 
-You can use Airtable as described below, or select **Local CSV** in Settings and upload **multiple CSV files** with `front` and `back` columns. The saved CSV files and compatible Airtable tables appear as checkboxes above **Cooling Off**, each showing its card count. Check one or more decks and click **Save & Start** to study all of their cards together. Each card's review history is saved in its original CSV or Airtable table, so selecting a smaller group later retains the updated scores. In Local CSV mode, **Delete selected CSVs** removes all checked files and their saved review history from this browser; **Export CSV** combines cards from all checked decks into one CSV; **Reset Counts** resets the checked decks only. Older single-CSV browser data is migrated automatically.
+You can use Airtable as described below, or select **Local CSV** in Settings and upload **multiple CSV files** with `front` and `back` columns. The saved CSV files and compatible Airtable tables appear as checkboxes above **Cooling Off**, each showing its card count and a parenthetical overall familiarity percentage (the average card score for that single deck, just like the number after `|` during a single-deck session). This percentage updates as you review cards. Check one or more decks and click **Save & Start** to study all of their cards together. Each card's review history is saved in its original CSV or Airtable table, so selecting a smaller group later retains the updated scores. In Local CSV mode, **Delete selected CSVs** removes all checked files and their saved review history from this browser; **Export CSV** combines cards from all checked decks into one CSV; **Reset Counts** resets the checked decks only. Older single-CSV browser data is migrated automatically.
 
 **Cooling Off** controls the minimum number of *other questions* that must be shown before a card can return. For example, with Cooling Off set to `2`, answering A means neither the next question nor the one after that can be A; A becomes eligible on the third subsequent question. Set it to `0` to allow immediate repeats. This is enforced per card, not by an elapsed time or a shared counter. It must be smaller than the total card count of the selected decks. Each card’s `last` review value stores its position in the recent review order so the exclusion survives restarting the app (for CSV/local progress in this browser and for full-progress Airtable tables via their saved `last` field).
 
@@ -26,7 +26,7 @@ You can use Airtable as described below, or select **Local CSV** in Settings and
 
 2. Fill your Airtable with your cards by placing your desired text or the URL of an image in both the "front" and "back" cells of a row. The other columns will capture the history of your interactions (e.g., how many times you got it right).
 3. Create an Airtable [personal access token](https://airtable.com/create/tokens) with **schema.bases:read** and **data.records:read** scopes, plus **data.records:write** if using the progress columns. Give it access to the base you intend to use. Find that base's ID ([instructions](#your-base-id) below).
-4. Open the app, select **Airtable**, and enter only the **token** and **Base ID**. The app automatically lists tables that have `front` and `back` fields and counts their records (including tables with more than 100 cards). Check one or more tables and click **Save & Start**. Use **Refresh Airtable Tables** to rescan after creating or modifying tables.
+4. Open the app, select **Airtable**, and enter only the **token** and **Base ID**. The app automatically lists tables that have `front` and `back` fields and shows each table's card count and familiarity percentage (including tables with more than 100 cards). Check one or more tables and click **Save & Start**. Use **Refresh Airtable Tables** to rescan after creating or modifying tables.
 
 ### Saving the app
 
@@ -59,7 +59,7 @@ The string of text between `https://airtable.com/` and `/api/docs#curl/introduct
 
 ### Choosing a table
 
-There is no table-name field to fill in: compatible tables are listed automatically, with their number of cards. Check any combination of tables to include in the study session. The list refreshes when you change credentials or press **Refresh Airtable Tables**.
+There is no table-name field to fill in: compatible tables are listed automatically, with their number of cards and individual overall familiarity percentage. Check any combination of tables to include in the study session. The list refreshes when you change credentials or press **Refresh Airtable Tables**.
 
 ### Loading a CSV from a link
 

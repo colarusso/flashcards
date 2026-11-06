@@ -350,6 +350,11 @@
 			var countLabel = count === null || count === undefined
 				? (item.countError ? "card count unavailable" : "counting cards…")
 				: count+" card"+(count === 1 ? "" : "s");
+			// Use the same rounded average shown to the right of | while studying.
+			// The Airtable value is populated when its paginated summary loads.
+			var familiarity = local ? averageCardScore(item.cards) : item.familiarity;
+			var familiarityLabel = count !== null && count !== undefined && familiarity !== null && familiarity !== undefined
+				? " ("+familiarity+"%)" : "";
 			var checkbox = $("<input>", {type:"checkbox", id:id, value:item.id})
 				.prop("checked", selected.indexOf(item.id) !== -1)
 				.on("change", function(){
@@ -362,7 +367,7 @@
 				});
 			container.append($("<label>", {"class":"deck-option", "for":id})
 				.append($("<span>", {"class":"deck-checkbox-column"}).append(checkbox),
-					$("<span>", {"class":"deck-name-column"}).text(item.name+" — "+countLabel)));
+					$("<span>", {"class":"deck-name-column"}).text(item.name+" — "+countLabel+familiarityLabel)));
 		});
 		updateDeckSelectionStatus();
 	}
@@ -425,6 +430,7 @@
 		makeSessionCardsFromAirtable(tables, sessionAirtableConfig).then(function(entries){
 			if (sequence !== sessionSequence) return;
 			sessionCards = entries;
+			tables.forEach(function(table){ updateAirtableFamiliarityFromSession(table.id); });
 			work = 0;
 			$.mobile.loading("hide");
 			load_card("front", "slide");
@@ -768,7 +774,8 @@
 				return names.indexOf("front") >= 0 && names.indexOf("back") >= 0;
 			}).map(function(t){
 				var names = (t.fields || []).map(function(f){ return f.name; });
-				return {id:t.id, name:t.name, count:null, countError:false,
+				return {id:t.id, name:t.name, count:null, familiarity:null, countError:false,
+					hasScoreField:names.indexOf("score") >= 0,
 					fullSchema:["up", "down", "score", "last", "random"].every(function(f){ return names.indexOf(f) >= 0; })};
 			});
 			if (airtableSelectionBase && airtableSelectionBase !== baseId) {
@@ -787,13 +794,14 @@
 			airtableSelectionBase = baseId;
 			saveSettings();
 			renderDeckChoices();
-			// Count all pages, not just the first 100 records.
+			// Compute both card count and familiarity across every page of each table.
 			return airtableTables.reduce(function(chain, table){
 				return chain.then(function(){
 					if (requestId !== airtableRequestSequence) return;
-					return countAirtableRecords(baseId, table.id, token).then(function(count){
+					return summarizeAirtableRecords(baseId, table, token).then(function(summary){
 						if (requestId !== airtableRequestSequence) return;
-						table.count = count;
+						table.count = summary.count;
+						table.familiarity = summary.familiarity;
 						renderDeckChoices();
 					}).catch(function(error){
 						if (requestId !== airtableRequestSequence) return;
@@ -813,13 +821,35 @@
 		});
 	}
 
-		function countAirtableRecords(baseId, tableId, token, offset, count) {
-		var url = "https://api.airtable.com/v0/"+encodeURIComponent(baseId)+"/"+encodeURIComponent(tableId)+"?pageSize=100&fields%5B%5D=front"+
+	function summarizeAirtableRecords(baseId, table, token, offset, totals, progress) {
+		// Request only the score field if it exists, or front for ID/count-only tables.
+		// For tables without all progress fields, the browser's saved score wins.
+		totals = totals || {count:0, scoreSum:0};
+		if (progress === undefined) progress = table.fullSchema ? null : readBasicProgress(table.id, baseId);
+		var field = table.hasScoreField ? "score" : "front";
+		var url = "https://api.airtable.com/v0/"+encodeURIComponent(baseId)+"/"+encodeURIComponent(table.id)+
+			"?pageSize=100&fields%5B%5D="+encodeURIComponent(field)+
 			(offset ? "&offset="+encodeURIComponent(offset) : "");
 		return airtableGetWithRetry(url, {Authorization:"Bearer "+token}).then(function(response){
-			count = (count || 0)+(response.data.records || []).length;
-			return response.data.offset ? countAirtableRecords(baseId,tableId,token,response.data.offset,count) : count;
+			(response.data.records || []).forEach(function(record){
+				var score = normalizeNumber((record.fields || {}).score, 50);
+				if (progress && progress[record.id]) score = normalizeNumber(progress[record.id].score, score);
+				totals.count++;
+				totals.scoreSum += score;
+			});
+			return response.data.offset
+				? summarizeAirtableRecords(baseId, table, token, response.data.offset, totals, progress)
+				: {count:totals.count, familiarity:totals.count ? Math.round(totals.scoreSum / totals.count) : 50};
 		});
+	}
+
+	function updateAirtableFamiliarityFromSession(tableId) {
+		var table = airtableTables.filter(function(item){ return item.id === tableId; })[0];
+		if (!table || !sessionAirtableConfig || sessionAirtableConfig.base !== $("#base").val().trim()) return;
+		var cards = sessionCards.filter(function(entry){ return entry.source === "airtable" && entry.tableId === tableId; })
+			.map(function(entry){ return entry.card; });
+		table.count = cards.length;
+		table.familiarity = averageCardScore(cards);
 	}
 
 
@@ -986,7 +1016,10 @@
 			deckScore = averageCardScore(sessionCardObjects());
 			updateScoreHeaders();
 			if (entry.source === "local") persistLocalDeck();
-			else if (!entry.fullSchema) persistBasicEntry(entry);
+			else {
+				if (!entry.fullSchema) persistBasicEntry(entry);
+				updateAirtableFamiliarityFromSession(entry.tableId);
+			}
 			work = 0;
 			load_card("front", "slideup");
 		}
@@ -1090,6 +1123,7 @@
 			});
 		});
 		persistLocalDeck();
+		renderDeckChoices();
 		deckScore = 50;
 		updateScoreHeaders();
 	}
@@ -1140,14 +1174,24 @@
 				if (!table.fullSchema) {
 					localStorage.removeItem(basicProgressKey(table.id, config.base));
 					count += table.count;
+					// A partial-schema table can still contain Airtable scores. Clearing
+					// browser progress restores those values, not necessarily 50%.
+					if (table.hasScoreField) return summarizeAirtableRecords(config.base, table, config.token).then(function(summary){
+						table.familiarity = summary.familiarity;
+					});
+					table.familiarity = 50;
 					return;
 				}
 				return fetchAllAirtableRecords("", [], table.id, config).then(function(records){
-					return patchAirtableResetBatch(records, 0, table.id, config).then(function(){ count += records.length; });
+					return patchAirtableResetBatch(records, 0, table.id, config).then(function(){
+						count += records.length;
+						table.familiarity = 50;
+					});
 				});
 			});
 		}, Promise.resolve()).then(function(){
 			$.mobile.loading("hide");
+			renderDeckChoices();
 			sessionCards = [];
 			currentSessionEntry = null;
 			deckScore = 50;
